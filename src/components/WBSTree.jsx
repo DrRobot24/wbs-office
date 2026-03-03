@@ -165,8 +165,32 @@ export default function WBSTree({
       container.style.height = 'auto'
       container.style.maxHeight = 'none'
 
-      // ── Apply print-friendly theme (white bg, dark text) ──
+      // ── Convert oklch colors to RGB (html2canvas doesn't support oklch) ──
       const tree = treeRef.current
+      const allEls = tree.querySelectorAll('*')
+      const savedInlineStyles = new Map()
+
+      // Helper: get computed style and force inline RGB for problematic properties
+      const colorProps = ['color', 'backgroundColor', 'borderColor', 'borderTopColor', 'borderBottomColor', 'borderLeftColor', 'borderRightColor']
+      allEls.forEach(el => {
+        const computed = getComputedStyle(el)
+        const saved = {}
+        let changed = false
+        colorProps.forEach(prop => {
+          const val = computed[prop]
+          if (val && val.includes('oklch')) {
+            saved[prop] = el.style[prop]
+            // Force browser to resolve to rgb by reading from a temp element
+            el.style[prop] = val
+            changed = true
+          }
+        })
+        if (changed) savedInlineStyles.set(el, saved)
+      })
+
+      // ── Apply print-friendly theme (white bg, dark text) ──
+      // Save tree bg
+      const prevTreeBg = tree.style.backgroundColor
       tree.style.backgroundColor = '#ffffff'
 
       const cards = tree.querySelectorAll('.wbs-node-card')
@@ -175,28 +199,39 @@ export default function WBSTree({
         savedCardStyles.push({
           bg: card.style.backgroundColor,
           border: card.style.borderColor,
-          color: card.style.color,
         })
         card.style.backgroundColor = '#f8fafc'
         card.style.borderColor = '#d97706'
+        card.style.boxShadow = '0 1px 3px rgba(0,0,0,0.1)'
       })
 
-      // Change text colors to dark for readability on white
-      const amberTexts = tree.querySelectorAll('[class*="text-amber"]')
-      const savedTextColors = []
-      amberTexts.forEach(el => {
-        savedTextColors.push(el.style.color)
-        // WBS codes → dark amber, titles → dark gray
-        if (el.classList.contains('font-bold') && el.textContent.match(/^\d/)) {
-          el.style.color = '#92400e' // amber-800
-        } else {
-          el.style.color = '#1e293b' // slate-800
+      // Change ALL text to dark colors for readability on white
+      allEls.forEach(el => {
+        const computed = getComputedStyle(el)
+        const color = computed.color
+        // If text is light-ish (amber, white, light gray on dark bg), make it dark
+        if (color) {
+          const match = color.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/)
+          if (match) {
+            const [, r, g, b] = match.map(Number)
+            const luminance = (r * 0.299 + g * 0.587 + b * 0.114)
+            if (luminance > 120) {
+              // Light text → make dark
+              if (!savedInlineStyles.has(el)) savedInlineStyles.set(el, {})
+              if (!savedInlineStyles.get(el).color) savedInlineStyles.get(el).color = el.style.color
+              // Amber-ish text → dark amber; others → slate
+              if (r > 150 && g > 100 && b < 100) {
+                el.style.color = '#92400e' // amber-800
+              } else {
+                el.style.color = '#1e293b' // slate-800
+              }
+            }
+          }
         }
       })
 
       // Change connector lines to dark
-      const connectors = tree.querySelectorAll('.wbs-child-wrapper, .wbs-children-row')
-      const vLines = tree.querySelectorAll('.bg-amber-500\\/30')
+      const vLines = tree.querySelectorAll('[class*="bg-amber"]')
       const savedLineBgs = []
       vLines.forEach(line => {
         savedLineBgs.push(line.style.backgroundColor)
@@ -211,23 +246,55 @@ export default function WBSTree({
         btn.style.display = 'none'
       })
 
+      // Force all remaining oklch → use a CSS override on the tree root
+      const styleOverride = document.createElement('style')
+      styleOverride.textContent = `
+        .wbs-print-mode, .wbs-print-mode * {
+          --tw-ring-color: #d97706 !important;
+          --tw-shadow-color: transparent !important;
+        }
+      `
+      document.head.appendChild(styleOverride)
+      tree.classList.add('wbs-print-mode')
+
       const canvas = await html2canvas(tree, {
         backgroundColor: '#ffffff',
         scale: 2,
         useCORS: true,
         logging: false,
+        onclone: (clonedDoc) => {
+          // In cloned DOM, force-convert any remaining oklch
+          const clonedTree = clonedDoc.querySelector('.wbs-print-mode')
+          if (clonedTree) {
+            clonedTree.querySelectorAll('*').forEach(el => {
+              const s = el.style
+              colorProps.forEach(prop => {
+                if (s[prop] && s[prop].includes('oklch')) {
+                  s[prop] = 'transparent'
+                }
+              })
+            })
+          }
+        },
       })
 
       // ── Restore original dark theme ──
-      tree.style.backgroundColor = ''
+      tree.classList.remove('wbs-print-mode')
+      document.head.removeChild(styleOverride)
+      tree.style.backgroundColor = prevTreeBg
       cards.forEach((card, i) => {
         card.style.backgroundColor = savedCardStyles[i].bg
         card.style.borderColor = savedCardStyles[i].border
-        card.style.color = savedCardStyles[i].color
+        card.style.boxShadow = ''
       })
-      amberTexts.forEach((el, i) => { el.style.color = savedTextColors[i] })
       vLines.forEach((line, i) => { line.style.backgroundColor = savedLineBgs[i] })
       actionBtns.forEach((btn, i) => { btn.style.display = savedBtnDisplay[i] })
+      // Restore all saved inline styles
+      savedInlineStyles.forEach((saved, el) => {
+        Object.entries(saved).forEach(([prop, val]) => {
+          el.style[prop] = val || ''
+        })
+      })
       container.style.overflow = prevOverflow
       container.style.height = prevHeight
       container.style.maxHeight = prevMaxHeight

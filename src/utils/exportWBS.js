@@ -182,13 +182,13 @@ export function esportaPDF(progetto) {
       textColor: [40, 40, 40],
     },
     columnStyles: {
-      0: { cellWidth: 18, halign: 'center', fontStyle: 'bold' },
-      1: { cellWidth: 45 },
-      2: { cellWidth: 55 },
-      3: { cellWidth: 40 },
-      4: { cellWidth: 28, halign: 'center' },
-      5: { cellWidth: 25, halign: 'center' },
-      6: { cellWidth: 15, halign: 'center', fontStyle: 'bold' },
+      0: { cellWidth: 16, halign: 'center', fontStyle: 'bold' },
+      1: { cellWidth: 38 },
+      2: { cellWidth: 48 },
+      3: { cellWidth: 35 },
+      4: { cellWidth: 24, halign: 'center' },
+      5: { cellWidth: 22, halign: 'center' },
+      6: { cellWidth: 14, halign: 'center', fontStyle: 'bold' },
     },
     didParseCell(data) {
       // Highlight fase rows with a subtle background
