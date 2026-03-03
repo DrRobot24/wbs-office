@@ -1,5 +1,5 @@
 import { useState, useRef, Children } from 'react'
-import html2canvas from 'html2canvas'
+import { toPng } from 'html-to-image'
 import jsPDF from 'jspdf'
 import TaskModal from './TaskModal'
 
@@ -156,8 +156,10 @@ export default function WBSTree({
     if (!treeRef.current) return
     setExporting(true)
     try {
-      // Temporarily remove clipping so html2canvas can see the full tree
       const container = containerRef.current
+      const tree = treeRef.current
+
+      // Temporarily remove clipping so the full tree is visible
       const prevOverflow = container.style.overflow
       const prevHeight = container.style.height
       const prevMaxHeight = container.style.maxHeight
@@ -165,153 +167,36 @@ export default function WBSTree({
       container.style.height = 'auto'
       container.style.maxHeight = 'none'
 
-      // Mark tree root for identification in cloned DOM
-      const tree = treeRef.current
-      tree.setAttribute('data-print-root', '1')
+      // Hide action buttons for cleaner print
+      const btns = tree.querySelectorAll('button')
+      btns.forEach(b => b.style.display = 'none')
 
-      // ── Canvas2D color resolver: converts ANY CSS color (incl. oklch) → hex ──
-      const resolverCtx = document.createElement('canvas').getContext('2d')
-      function resolveToHex(cssColor) {
-        if (!cssColor || cssColor === 'transparent' || cssColor === 'rgba(0, 0, 0, 0)') return 'transparent'
-        resolverCtx.fillStyle = '#010101' // reset to a known value
-        resolverCtx.fillStyle = cssColor
-        return resolverCtx.fillStyle // returns #rrggbb or stays #010101 if invalid
-      }
-
-      const canvas = await html2canvas(tree, {
-        backgroundColor: '#ffffff',
-        scale: 2,
-        useCORS: true,
-        logging: false,
-        onclone: (clonedDoc) => {
-          const win = clonedDoc.defaultView
-          const clonedTree = clonedDoc.querySelector('[data-print-root]')
-          if (!clonedTree || !win) return
-
-          // ── STEP 1: Nuke ALL oklch from the cloned document ──
-          // Remove all <style> and <link rel=stylesheet> to eliminate oklch sources
-          const stylesheets = clonedDoc.querySelectorAll('style, link[rel="stylesheet"]')
-          const removedSheets = []
-          stylesheets.forEach(s => {
-            removedSheets.push({ el: s, parent: s.parentNode })
-            s.remove()
-          })
-
-          // ── STEP 2: Bake all visual styles as inline on every element ──
-          // (read computed styles from the ORIGINAL document's elements
-          //  which the browser resolves to rgb, then use canvas resolver as backup)
-          const origTree = tree
-          const origEls = [origTree, ...origTree.querySelectorAll('*')]
-          const cloneEls = [clonedTree, ...clonedTree.querySelectorAll('*')]
-
-          const cssColorProps = [
-            'color', 'background-color', 'border-top-color', 'border-right-color',
-            'border-bottom-color', 'border-left-color', 'outline-color',
-          ]
-          const cssLayoutProps = [
-            'display', 'position', 'flex-direction', 'align-items', 'justify-content',
-            'gap', 'padding', 'margin', 'width', 'min-width', 'max-width',
-            'height', 'min-height', 'font-size', 'font-weight', 'font-family',
-            'text-align', 'line-height', 'letter-spacing', 'border-width',
-            'border-style', 'border-radius', 'overflow', 'opacity', 'white-space',
-            'box-sizing',
-          ]
-
-          for (let i = 0; i < origEls.length && i < cloneEls.length; i++) {
-            const origComputed = getComputedStyle(origEls[i])
-            const cloneEl = cloneEls[i]
-
-            // Bake color properties (resolved to rgb by the browser)
-            cssColorProps.forEach(prop => {
-              let val = origComputed.getPropertyValue(prop)
-              if (val && val.includes('oklch')) {
-                val = resolveToHex(val)
-              }
-              cloneEl.style.setProperty(prop, val, 'important')
-            })
-
-            // Bake layout properties
-            cssLayoutProps.forEach(prop => {
-              const val = origComputed.getPropertyValue(prop)
-              if (val) cloneEl.style.setProperty(prop, val)
-            })
-
-            // box-shadow
-            const shadow = origComputed.getPropertyValue('box-shadow')
-            if (shadow && shadow !== 'none') {
-              if (shadow.includes('oklch')) {
-                cloneEl.style.setProperty('box-shadow', 'none', 'important')
-              } else {
-                cloneEl.style.setProperty('box-shadow', shadow)
-              }
-            }
-          }
-
-          // ── STEP 3: Apply print-friendly theme overrides on the clone ──
-          clonedTree.style.setProperty('background-color', '#ffffff', 'important')
-
-          // Style each card
-          clonedTree.querySelectorAll('.wbs-node-card').forEach(card => {
-            card.style.setProperty('background-color', '#f8fafc', 'important')
-            card.style.setProperty('border-color', '#d97706', 'important')
-            card.style.setProperty('border-top-color', '#d97706', 'important')
-            card.style.setProperty('border-right-color', '#d97706', 'important')
-            card.style.setProperty('border-bottom-color', '#d97706', 'important')
-            card.style.setProperty('border-left-color', '#d97706', 'important')
-            card.style.setProperty('border-width', '2px', 'important')
-            card.style.setProperty('border-style', 'solid', 'important')
-            card.style.setProperty('box-shadow', '0 1px 4px rgba(0,0,0,0.12)', 'important')
-          })
-
-          // Make text dark for white background
-          cloneEls.forEach(el => {
-            const color = el.style.getPropertyValue('color')
-            if (color) {
-              const m = color.match(/rgba?\(\s*(\d+),\s*(\d+),\s*(\d+)/)
-              if (m) {
-                const [, r, g, b] = m.map(Number)
-                const lum = r * 0.299 + g * 0.587 + b * 0.114
-                if (lum > 120) {
-                  el.style.setProperty('color',
-                    (r > 150 && g > 100 && b < 100) ? '#92400e' : '#1e293b',
-                    'important'
-                  )
-                }
-              }
-            }
-          })
-
-          // Dark connectors (the vertical line divs)
-          clonedTree.querySelectorAll('[class*="bg-amber"]').forEach(el => {
-            el.style.setProperty('background-color', '#d97706', 'important')
-          })
-
-          // Inject CSS for pseudo-element connectors
-          const printStyle = clonedDoc.createElement('style')
-          printStyle.textContent = `
-            .wbs-child-wrapper::before,
-            .wbs-child-wrapper::after {
-              background-color: #d97706 !important;
-            }
-          `
-          clonedDoc.head.appendChild(printStyle)
-
-          // Hide action buttons
-          clonedTree.querySelectorAll('button').forEach(btn => {
-            btn.style.setProperty('display', 'none', 'important')
-          })
+      // Capture the tree using html-to-image (native browser rendering — supports oklch)
+      const dataUrl = await toPng(tree, {
+        backgroundColor: '#0a1929',
+        pixelRatio: 2,
+        filter: (node) => {
+          // Filter out hidden buttons (already hidden, but be safe)
+          if (node.tagName === 'BUTTON') return false
+          return true
         },
       })
 
-      // Restore container (original DOM was never visually changed)
-      tree.removeAttribute('data-print-root')
+      // Restore buttons & container
+      btns.forEach(b => b.style.display = '')
       container.style.overflow = prevOverflow
       container.style.height = prevHeight
       container.style.maxHeight = prevMaxHeight
 
-      const imgData = canvas.toDataURL('image/png')
-      const imgW = canvas.width
-      const imgH = canvas.height
+      // Load the image to get dimensions
+      const img = new Image()
+      await new Promise((resolve, reject) => {
+        img.onload = resolve
+        img.onerror = reject
+        img.src = dataUrl
+      })
+      const imgW = img.width
+      const imgH = img.height
 
       // A4 landscape dimensions in mm
       const pdfW = 297
@@ -323,59 +208,48 @@ export default function WBSTree({
 
       // Scale image to fit page width, allow multi-page if tall
       const ratio = usableW / imgW
-      const scaledW = usableW
       const scaledH = imgH * ratio
 
       const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' })
 
-      // ── Branded header (white-friendly) ──
+      // ── Branded header ──
       const drawHeader = (pageNum, totalPages) => {
-        // Subtle light header band
-        doc.setFillColor(248, 250, 252) // slate-50
+        doc.setFillColor(15, 27, 46)
         doc.rect(0, 0, pdfW, headerH, 'F')
-        doc.setDrawColor(217, 119, 6) // amber-600
-        doc.setLineWidth(0.8)
-        doc.line(0, headerH, pdfW, headerH)
-
         doc.setFont('helvetica', 'bold')
         doc.setFontSize(16)
-        doc.setTextColor(15, 23, 42) // slate-900
+        doc.setTextColor(245, 158, 11)
         doc.text('WBS Office – Albero WBS', margin, 14)
-
         doc.setFontSize(9)
         doc.setFont('helvetica', 'normal')
-        doc.setTextColor(71, 85, 105) // slate-600
+        doc.setTextColor(180, 180, 180)
         doc.text(`Progetto: ${progetto.titolo}`, margin, 21)
-        doc.setTextColor(146, 64, 14) // amber-800
         doc.text(`Avanzamento: ${progetto.percentuale}%`, margin, 26)
-
-        doc.setTextColor(100, 116, 139) // slate-500
+        doc.setTextColor(100, 100, 100)
         doc.text(`Pagina ${pageNum} / ${totalPages}`, pdfW - margin, 26, { align: 'right' })
         doc.text(new Date().toLocaleDateString('it-IT'), pdfW - margin, 21, { align: 'right' })
       }
 
-      // Calculate total pages
       const totalPages = Math.max(1, Math.ceil(scaledH / usableH))
 
       for (let p = 0; p < totalPages; p++) {
         if (p > 0) doc.addPage()
         drawHeader(p + 1, totalPages)
 
-        // Source crop from canvas
+        // Crop from source image for this page
         const srcY = (p * usableH) / ratio
         const srcH = Math.min(usableH / ratio, imgH - srcY)
         if (srcH <= 0) break
 
-        // Create cropped canvas for this page
         const pageCanvas = document.createElement('canvas')
         pageCanvas.width = imgW
         pageCanvas.height = Math.ceil(srcH)
         const ctx = pageCanvas.getContext('2d')
-        ctx.drawImage(canvas, 0, srcY, imgW, srcH, 0, 0, imgW, srcH)
+        ctx.drawImage(img, 0, srcY, imgW, srcH, 0, 0, imgW, srcH)
 
         const pageImg = pageCanvas.toDataURL('image/png')
         const destH = srcH * ratio
-        doc.addImage(pageImg, 'PNG', margin, headerH + 4, scaledW, destH)
+        doc.addImage(pageImg, 'PNG', margin, headerH + 4, usableW, destH)
       }
 
       doc.save(`WBS_Albero_${progetto.titolo.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`)
