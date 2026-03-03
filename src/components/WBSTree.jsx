@@ -1,4 +1,6 @@
 import { useState, useRef, Children } from 'react'
+import html2canvas from 'html2canvas'
+import jsPDF from 'jspdf'
 import TaskModal from './TaskModal'
 
 /* ─── Recursive Tree Node ─── */
@@ -144,8 +146,105 @@ export default function WBSTree({
 }) {
   const [modal, setModal] = useState(null)
   const containerRef = useRef(null)
+  const treeRef = useRef(null)
   const [isPanning, setIsPanning] = useState(false)
+  const [exporting, setExporting] = useState(false)
   const panRef = useRef({ startX: 0, startY: 0, scrollX: 0, scrollY: 0 })
+
+  /* ── Export tree as visual PDF ── */
+  const handleExportTreePDF = async () => {
+    if (!treeRef.current) return
+    setExporting(true)
+    try {
+      // Temporarily expand tree fully and remove clipping for capture
+      const container = containerRef.current
+      const prevOverflow = container.style.overflow
+      const prevHeight = container.style.height
+      const prevMaxHeight = container.style.maxHeight
+      container.style.overflow = 'visible'
+      container.style.height = 'auto'
+      container.style.maxHeight = 'none'
+
+      const canvas = await html2canvas(treeRef.current, {
+        backgroundColor: '#0a1929',
+        scale: 2,
+        useCORS: true,
+        logging: false,
+      })
+
+      // Restore container
+      container.style.overflow = prevOverflow
+      container.style.height = prevHeight
+      container.style.maxHeight = prevMaxHeight
+
+      const imgData = canvas.toDataURL('image/png')
+      const imgW = canvas.width
+      const imgH = canvas.height
+
+      // A4 landscape dimensions in mm
+      const pdfW = 297
+      const pdfH = 210
+      const margin = 10
+      const headerH = 28
+      const usableW = pdfW - margin * 2
+      const usableH = pdfH - margin - headerH - 8
+
+      // Scale image to fit page width, allow multi-page if tall
+      const ratio = usableW / imgW
+      const scaledW = usableW
+      const scaledH = imgH * ratio
+
+      const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' })
+
+      // ── Branded header ──
+      const drawHeader = (pageNum, totalPages) => {
+        doc.setFillColor(15, 27, 46)
+        doc.rect(0, 0, pdfW, headerH, 'F')
+        doc.setFont('helvetica', 'bold')
+        doc.setFontSize(16)
+        doc.setTextColor(245, 158, 11)
+        doc.text('WBS Office – Albero WBS', margin, 14)
+        doc.setFontSize(9)
+        doc.setTextColor(160, 160, 160)
+        doc.text(`Progetto: ${progetto.titolo}`, margin, 21)
+        doc.text(`Avanzamento: ${progetto.percentuale}%`, margin, 26)
+        doc.setTextColor(100, 100, 100)
+        doc.text(`Pagina ${pageNum} / ${totalPages}`, pdfW - margin, 26, { align: 'right' })
+        doc.text(new Date().toLocaleDateString('it-IT'), pdfW - margin, 21, { align: 'right' })
+      }
+
+      // Calculate total pages
+      const totalPages = Math.max(1, Math.ceil(scaledH / usableH))
+
+      for (let p = 0; p < totalPages; p++) {
+        if (p > 0) doc.addPage()
+        drawHeader(p + 1, totalPages)
+
+        // Source crop from canvas
+        const srcY = (p * usableH) / ratio
+        const srcH = Math.min(usableH / ratio, imgH - srcY)
+        if (srcH <= 0) break
+
+        // Create cropped canvas for this page
+        const pageCanvas = document.createElement('canvas')
+        pageCanvas.width = imgW
+        pageCanvas.height = Math.ceil(srcH)
+        const ctx = pageCanvas.getContext('2d')
+        ctx.drawImage(canvas, 0, srcY, imgW, srcH, 0, 0, imgW, srcH)
+
+        const pageImg = pageCanvas.toDataURL('image/png')
+        const destH = srcH * ratio
+        doc.addImage(pageImg, 'PNG', margin, headerH + 4, scaledW, destH)
+      }
+
+      doc.save(`WBS_Albero_${progetto.titolo.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`)
+    } catch (err) {
+      console.error('Errore export PDF albero:', err)
+      alert('Errore durante la generazione del PDF. Riprova.')
+    } finally {
+      setExporting(false)
+    }
+  }
 
   /* ── Pan (drag-to-scroll) ── */
   const handleMouseDown = (e) => {
@@ -196,12 +295,23 @@ export default function WBSTree({
         <div className="w-10 h-10 rounded-full bg-amber-500/20 border-2 border-amber-500/50 flex items-center justify-center shrink-0">
           <span className="text-amber-400 font-bold text-sm">WB</span>
         </div>
-        <div>
+        <div className="flex-1">
           <h1 className="text-amber-400 font-bold text-lg">WBS Interattiva</h1>
           <p className="text-amber-500/50 text-xs">
             Work Breakdown Structure | Numerazione automatica
           </p>
         </div>
+        <button
+          onClick={handleExportTreePDF}
+          disabled={exporting}
+          className="flex items-center gap-2 px-4 py-2 bg-red-600/80 hover:bg-red-600 disabled:opacity-50 disabled:cursor-wait border border-red-500/50 rounded-lg text-white text-sm font-semibold transition-colors cursor-pointer shadow-lg shadow-red-900/30"
+          title="Esporta l'albero WBS come PDF visuale"
+        >
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+          </svg>
+          {exporting ? 'Generazione...' : 'Stampa PDF'}
+        </button>
       </div>
 
       <p className="shrink-0 text-center text-amber-500/30 text-[11px] py-2 bg-[#0a1929] border-b border-amber-500/10">
@@ -217,7 +327,7 @@ export default function WBSTree({
         onMouseUp={handleMouseUp}
         onMouseLeave={handleMouseUp}
       >
-        <div className="inline-flex justify-center min-w-full pb-16">
+        <div ref={treeRef} className="inline-flex justify-center min-w-full pb-16">
           {/* Root = Project */}
           <TreeNode
             wbsCode={rootCode}

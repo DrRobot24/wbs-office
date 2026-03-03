@@ -17,7 +17,9 @@
 | 🗂️ **Multi-progetto** | Gestione di più progetti con sidebar navigabile |
 | 💾 **Persistenza locale** | Salvataggio automatico su localStorage |
 | 📤 **Export / Import JSON** | Backup e ripristino completo dei progetti |
-| 🖱️ **Pan panoramico** | Trascina lo sfondo per navigare l'albero WBS |
+| � **Export PDF** | PDF A4 landscape brandizzato con tabella WBS, barra avanzamento e paginazione |
+| 📗 **Export Excel** | Foglio .xlsx con info progetto e tabella WBS, modificabile liberamente |
+| �🖱️ **Pan panoramico** | Trascina lo sfondo per navigare l'albero WBS |
 
 ---
 
@@ -54,7 +56,8 @@ src/
 │   └── useProjects.js        # Hook CRUD progetti, fasi, task + localStorage
 └── utils/
     ├── calcPercent.js         # Calcolo percentuali aggregate
-    └── wbsCode.js            # Generazione codici WBS
+    ├── wbsCode.js             # Generazione codici WBS
+    └── exportWBS.js           # Export Excel (.xlsx) e PDF
 ```
 
 ---
@@ -86,6 +89,8 @@ Le percentuali vengono **ricalcolate automaticamente** dal basso verso l'alto:
 - **Vite 7** — Build tool ultrarapido
 - **Tailwind CSS 4** — Utility-first styling
 - **UUID** — Generazione ID univoci
+- **SheetJS (xlsx)** — Generazione file Excel
+- **jsPDF + AutoTable** — Generazione documenti PDF
 - **localStorage** — Persistenza dati lato client
 
 ---
