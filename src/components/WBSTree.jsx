@@ -287,58 +287,76 @@ export default function WBSTree({
       const btns = tree.querySelectorAll('button')
       btns.forEach(b => b.style.display = 'none')
 
-      // ── Apply print-friendly light theme temporarily ──
-      const savedStyles = new Map()
+      // ── LIGHT THEME: remove dark Tailwind classes + set inline light styles ──
+      // html-to-image clones DOM with classes intact, so we must REMOVE the dark
+      // classes and replace with inline white/light styles for reliable rendering.
+      const savedClasses = new Map()   // el → original className
+      const savedCssText = new Map()   // el → original style.cssText
 
-      // Tree background → white
-      savedStyles.set(tree, { backgroundColor: tree.style.backgroundColor })
-      tree.style.backgroundColor = '#ffffff'
+      const saveClass = (el) => {
+        if (!savedClasses.has(el)) savedClasses.set(el, el.className)
+      }
+      const saveCss = (el) => {
+        if (!savedCssText.has(el)) savedCssText.set(el, el.style.cssText)
+      }
 
-      // Inject comprehensive print-override CSS with !important to beat Tailwind
-      const printCSS = document.createElement('style')
-      printCSS.textContent = `
-        .wbs-node-card {
-          background-color: #ffffff !important;
-          border-color: #92400e !important;
-          box-shadow: 0 1px 4px rgba(0,0,0,0.12) !important;
-        }
-        .wbs-node-card * {
-          color: #1e293b !important;
-        }
-        .wbs-node-card .text-amber-400,
-        .wbs-node-card .text-amber-300\\/90 {
-          color: #92400e !important;
-        }
-        .wbs-node-card span[class*="bg-red"], .wbs-node-card span[class*="bg-blue"],
-        .wbs-node-card span[class*="bg-emerald"], .wbs-node-card span[class*="bg-violet"],
-        .wbs-node-card span[class*="bg-orange"], .wbs-node-card span[class*="bg-amber"],
-        .wbs-node-card span[class*="bg-slate"] {
-          background-color: #f1f5f9 !important;
-          border-color: #94a3b8 !important;
-          color: #334155 !important;
-        }
-        .wbs-child-wrapper::before, .wbs-child-wrapper::after {
-          background-color: #92400e !important;
-        }
-        [class*="bg-amber-500\\/30"], [class*="bg-amber-500\\/20"] {
-          background-color: #92400e !important;
-        }
-        .w-px.bg-amber-500\\/30, .h-px.bg-amber-500\\/30,
-        [class*="w-px"][class*="bg-amber"], [class*="h-px"][class*="bg-amber"] {
-          background-color: #92400e !important;
-        }
-      `
-      document.head.appendChild(printCSS)
+      // Tree wrapper background → white
+      saveCss(tree)
+      tree.style.cssText += '; background-color: #ffffff !important;'
 
-      // Also force connector lines via inline for reliability
-      tree.querySelectorAll('[class*="bg-amber"]').forEach(el => {
-        const tag = el.tagName
-        if (tag !== 'BUTTON' && tag !== 'SPAN') {
-          if (!savedStyles.has(el)) savedStyles.set(el, {})
-          savedStyles.get(el).backgroundColor = el.style.backgroundColor
-          el.style.backgroundColor = '#92400e'
+      // Every node card → remove dark bg class, force white
+      tree.querySelectorAll('.wbs-node-card').forEach(card => {
+        saveClass(card)
+        saveCss(card)
+        // Remove all dark background/shadow/text classes
+        card.className = card.className
+          .replace(/bg-\[#[0-9a-fA-F]+\]/g, '')
+          .replace(/shadow-amber-[^\s]*/g, '')
+          .replace(/shadow-lg/g, '')
+          .replace(/hover:[^\s]*/g, '')
+          .replace(/transition-all/g, '')
+        card.style.cssText += '; background-color: #ffffff !important; border-color: #92400e !important; box-shadow: 0 1px 4px rgba(0,0,0,0.15) !important;'
+
+        // All child elements: force dark text, remove dark text classes
+        card.querySelectorAll('*').forEach(child => {
+          if (child.tagName === 'BUTTON') return
+          saveCss(child)
+          // Only modify className on HTML elements (not SVG which has SVGAnimatedString)
+          if (typeof child.className === 'string') {
+            saveClass(child)
+            child.className = child.className
+              .replace(/text-amber-[^\s]*/g, '')
+              .replace(/text-\[#[0-9a-fA-F]+\]/g, '')
+              .replace(/bg-\[#[0-9a-fA-F]+\]/g, '')
+          }
+          child.style.cssText += '; color: #1e293b !important; background-color: transparent !important;'
+        })
+
+        // Direct children divs: WBS code (brown) + title (dark grey)
+        const directDivs = card.querySelectorAll(':scope > div')
+        if (directDivs[0]) directDivs[0].style.cssText += '; color: #92400e !important; font-weight: bold !important;'
+        if (directDivs[1]) directDivs[1].style.cssText += '; color: #334155 !important;'
+
+        // Badge spans
+        card.querySelectorAll('span').forEach(sp => {
+          sp.style.cssText += '; background-color: #f1f5f9 !important; border-color: #94a3b8 !important; color: #334155 !important;'
+        })
+
+        // Force the card itself back to white (after children were set to transparent)
+        card.style.cssText += '; background-color: #ffffff !important;'
+      })
+
+      // Connector lines → dark amber (any div with bg-amber class)
+      tree.querySelectorAll('div').forEach(el => {
+        const cls = el.className || ''
+        if (typeof cls === 'string' && cls.includes('bg-amber')) {
+          saveCss(el)
+          el.style.cssText += '; background-color: #92400e !important;'
         }
       })
+
+      // Force a browser repaint before capture
+      await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)))
 
       // Capture the tree using html-to-image (native browser rendering — supports oklch)
       const dataUrl = await toPng(tree, {
@@ -350,13 +368,9 @@ export default function WBSTree({
         },
       })
 
-      // ── Restore original dark theme ──
-      document.head.removeChild(printCSS)
-      savedStyles.forEach((saved, el) => {
-        Object.entries(saved).forEach(([prop, val]) => {
-          el.style[prop] = val || ''
-        })
-      })
+      // ── Restore original dark theme (classes + inline styles) ──
+      savedClasses.forEach((origClass, el) => { el.className = origClass })
+      savedCssText.forEach((origCss, el) => { el.style.cssText = origCss })
 
       // Restore buttons & container
       btns.forEach(b => b.style.display = '')
