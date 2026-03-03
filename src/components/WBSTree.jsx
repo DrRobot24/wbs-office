@@ -3,8 +3,16 @@ import { toPng } from 'html-to-image'
 import jsPDF from 'jspdf'
 import TaskModal from './TaskModal'
 
+/* ─── Priority colors ─── */
+const PRIORITA_COLORI = {
+  urgente: 'bg-red-500/20 text-red-400 border-red-500/40',
+  alta: 'bg-orange-500/15 text-orange-400 border-orange-500/30',
+  media: 'bg-amber-500/10 text-amber-400/50 border-amber-500/20',
+  bassa: 'bg-slate-500/10 text-slate-400 border-slate-500/20',
+}
+
 /* ─── Recursive Tree Node ─── */
-function TreeNode({ wbsCode, titolo, onAdd, onEdit, onDelete, onRename, children: childElements }) {
+function TreeNode({ wbsCode, titolo, nodo, onAdd, onEdit, onDelete, onRename, onMoveUp, onMoveDown, onMoveLeft, onMoveRight, onPromote, onDemote, children: childElements }) {
   const [expanded, setExpanded] = useState(true)
   const [editing, setEditing] = useState(false)
   const [titleTemp, setTitleTemp] = useState(titolo)
@@ -53,6 +61,32 @@ function TreeNode({ wbsCode, titolo, onAdd, onEdit, onDelete, onRename, children
           </div>
         )}
 
+        {/* Info badges */}
+        {nodo && (
+          <div className="flex flex-wrap justify-center gap-1 mt-1.5">
+            {nodo.priorita && nodo.priorita !== 'media' && (
+              <span className={`text-[9px] px-1.5 py-0.5 rounded-full border ${PRIORITA_COLORI[nodo.priorita] || ''}`}>
+                {nodo.priorita === 'urgente' ? '🔴' : nodo.priorita === 'alta' ? '🟠' : '🟢'} {nodo.priorita}
+              </span>
+            )}
+            {nodo.materiali && nodo.materiali.length > 0 && (
+              <span className="text-[9px] px-1.5 py-0.5 rounded-full border bg-blue-500/10 text-blue-400 border-blue-500/25">
+                📦 {nodo.materiali.length}
+              </span>
+            )}
+            {(nodo.costoTotale !== '' && nodo.costoTotale !== undefined && nodo.costoTotale > 0) && (
+              <span className="text-[9px] px-1.5 py-0.5 rounded-full border bg-emerald-500/10 text-emerald-400 border-emerald-500/25">
+                💰 €{Number(nodo.costoTotale).toLocaleString('it-IT')}
+              </span>
+            )}
+            {nodo.note && (
+              <span className="text-[9px] px-1.5 py-0.5 rounded-full border bg-violet-500/10 text-violet-400 border-violet-500/25" title={nodo.note}>
+                📝
+              </span>
+            )}
+          </div>
+        )}
+
         {/* Action Buttons */}
         <div className="flex justify-center items-center gap-1.5 mt-2.5">
           {onAdd && (
@@ -98,6 +132,86 @@ function TreeNode({ wbsCode, titolo, onAdd, onEdit, onDelete, onRename, children
           )}
         </div>
 
+        {/* Move Buttons — reorder among siblings */}
+        {(onMoveUp || onMoveDown || onMoveLeft || onMoveRight) && (
+          <div className="flex justify-center items-center gap-1 mt-1.5">
+            {onMoveLeft && (
+              <button
+                onClick={e => { e.stopPropagation(); onMoveLeft() }}
+                className="w-6 h-6 flex items-center justify-center bg-sky-500/15 hover:bg-sky-500/35 border border-sky-500/40 rounded-full text-sky-400 transition-colors cursor-pointer"
+                title="Sposta a sinistra (tra fratelli)"
+              >
+                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7" />
+                </svg>
+              </button>
+            )}
+            {onMoveUp && (
+              <button
+                onClick={e => { e.stopPropagation(); onMoveUp() }}
+                className="w-6 h-6 flex items-center justify-center bg-sky-500/15 hover:bg-sky-500/35 border border-sky-500/40 rounded-full text-sky-400 transition-colors cursor-pointer"
+                title="Sposta su (tra fratelli)"
+              >
+                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 15l7-7 7 7" />
+                </svg>
+              </button>
+            )}
+            {onMoveDown && (
+              <button
+                onClick={e => { e.stopPropagation(); onMoveDown() }}
+                className="w-6 h-6 flex items-center justify-center bg-sky-500/15 hover:bg-sky-500/35 border border-sky-500/40 rounded-full text-sky-400 transition-colors cursor-pointer"
+                title="Sposta giù (tra fratelli)"
+              >
+                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+            )}
+            {onMoveRight && (
+              <button
+                onClick={e => { e.stopPropagation(); onMoveRight() }}
+                className="w-6 h-6 flex items-center justify-center bg-sky-500/15 hover:bg-sky-500/35 border border-sky-500/40 rounded-full text-sky-400 transition-colors cursor-pointer"
+                title="Sposta a destra (tra fratelli)"
+              >
+                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
+                </svg>
+              </button>
+            )}
+          </div>
+        )}
+
+        {/* Promote / Demote — change hierarchy level */}
+        {(onPromote || onDemote) && (
+          <div className="flex justify-center items-center gap-1 mt-1">
+            {onPromote && (
+              <button
+                onClick={e => { e.stopPropagation(); onPromote() }}
+                className="h-5 flex items-center gap-0.5 px-1.5 bg-emerald-500/15 hover:bg-emerald-500/35 border border-emerald-500/40 rounded-full text-emerald-400 transition-colors cursor-pointer"
+                title="Promuovi (sali di livello)"
+              >
+                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 15l7-7 7 7" />
+                </svg>
+                <span className="text-[8px] font-bold">LIV</span>
+              </button>
+            )}
+            {onDemote && (
+              <button
+                onClick={e => { e.stopPropagation(); onDemote() }}
+                className="h-5 flex items-center gap-0.5 px-1.5 bg-violet-500/15 hover:bg-violet-500/35 border border-violet-500/40 rounded-full text-violet-400 transition-colors cursor-pointer"
+                title="Declassa (scendi di livello)"
+              >
+                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 9l-7 7-7-7" />
+                </svg>
+                <span className="text-[8px] font-bold">LIV</span>
+              </button>
+            )}
+          </div>
+        )}
+
         {/* Expand / Collapse toggle */}
         {hasChildren && (
           <button
@@ -136,13 +250,15 @@ function TreeNode({ wbsCode, titolo, onAdd, onEdit, onDelete, onRename, children
 export default function WBSTree({
   progetto,
   progettoIndex,
-  onAggiungiFase,
-  onEliminaFase,
-  onRinominaFase,
-  onAggiungiTask,
-  onAggiornaTask,
-  onEliminaTask,
   onRinominaProgetto,
+  onAggiungiNodo,
+  onEliminaNodo,
+  onRinominaNodo,
+  onAggiornaNodo,
+  onSpostaNodo,
+  onSpostaNodoLaterale,
+  onPromuoviNodo,
+  onDeclassaNodo,
 }) {
   const [modal, setModal] = useState(null)
   const containerRef = useRef(null)
@@ -346,24 +462,57 @@ export default function WBSTree({
 
   const handleMouseUp = () => setIsPanning(false)
 
-  /* ── Task modal callbacks ── */
-  const handleTaskSave = (taskData) => {
-    if (modal.task) {
-      onAggiornaTask(progetto.id, modal.faseId, modal.task.id, taskData)
+  /* ── Node modal callbacks ── */
+  const handleNodeSave = (nodeData) => {
+    if (modal.node) {
+      // Editing existing node
+      onAggiornaNodo(progetto.id, modal.node.id, nodeData)
     } else {
-      onAggiungiTask(progetto.id, modal.faseId, taskData)
+      // Adding new child to parentId
+      onAggiungiNodo(progetto.id, modal.parentId, nodeData)
     }
     setModal(null)
   }
 
-  const handleTaskDelete = () => {
-    if (modal?.task) {
-      onEliminaTask(progetto.id, modal.faseId, modal.task.id)
+  const handleNodeDelete = () => {
+    if (modal?.node) {
+      onEliminaNodo(progetto.id, modal.node.id)
     }
     setModal(null)
   }
 
   const rootCode = `${progettoIndex + 1}`
+
+  /* ── Recursive node renderer ── */
+  function renderNodo(nodo, index, siblings, parentCode, depth = 1) {
+    const code = `${parentCode}.${index + 1}`
+    const isLeaf = !nodo.children || nodo.children.length === 0
+    const hasSiblings = siblings.length > 1
+    const isTopLevel = depth === 1 // direct child of root
+
+    return (
+      <TreeNode
+        key={nodo.id}
+        wbsCode={code}
+        titolo={nodo.titolo}
+        nodo={nodo}
+        onAdd={() => onAggiungiNodo(progetto.id, nodo.id, {})}
+        onEdit={() => setModal({ parentId: null, node: nodo })}
+        onRename={t => onRinominaNodo(progetto.id, nodo.id, t)}
+        onDelete={() => onEliminaNodo(progetto.id, nodo.id)}
+        onMoveUp={index > 0 ? () => onSpostaNodo(progetto.id, nodo.id, -1) : null}
+        onMoveDown={index < siblings.length - 1 ? () => onSpostaNodo(progetto.id, nodo.id, 1) : null}
+        onMoveLeft={hasSiblings && index > 0 ? () => onSpostaNodoLaterale(progetto.id, nodo.id, -1) : null}
+        onMoveRight={hasSiblings && index < siblings.length - 1 ? () => onSpostaNodoLaterale(progetto.id, nodo.id, 1) : null}
+        onPromote={!isTopLevel ? () => onPromuoviNodo(progetto.id, nodo.id) : null}
+        onDemote={index > 0 ? () => onDeclassaNodo(progetto.id, nodo.id) : null}
+      >
+        {(nodo.children || []).map((child, ci) =>
+          renderNodo(child, ci, nodo.children, code, depth + 1)
+        )}
+      </TreeNode>
+    )
+  }
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden bg-[#0a1929]">
@@ -375,7 +524,7 @@ export default function WBSTree({
         <div className="flex-1">
           <h1 className="text-amber-400 font-bold text-lg">WBS Interattiva</h1>
           <p className="text-amber-500/50 text-xs">
-            Work Breakdown Structure | Numerazione automatica
+            Work Breakdown Structure | Gerarchia libera a livelli infiniti
           </p>
         </div>
         <button
@@ -392,8 +541,51 @@ export default function WBSTree({
       </div>
 
       <p className="shrink-0 text-center text-amber-500/30 text-[11px] py-2 bg-[#0a1929] border-b border-amber-500/10">
-        Suggerimento: trascina lo sfondo per navigare la mappa. Doppio click sui nomi per rinominare.
+        Trascina lo sfondo per navigare. Doppio click sui nomi per rinominare. Frecce azzurre = riordina tra fratelli. Frecce verdi/viola con LIV = cambia livello gerarchico.
       </p>
+
+      {/* ── Legenda comandi ── */}
+      <div className="shrink-0 bg-[#091a2a] border-b border-amber-500/10 px-6 py-2 flex flex-wrap items-center justify-center gap-x-5 gap-y-1.5 text-[10px]">
+        <span className="text-amber-500/50 font-semibold mr-1">LEGENDA:</span>
+
+        <span className="flex items-center gap-1">
+          <span className="inline-block w-5 h-5 rounded-full bg-amber-500/20 border border-amber-500/50 text-amber-400 text-center leading-5 text-[9px] font-bold">+</span>
+          <span className="text-amber-300/50">Aggiungi figlio</span>
+        </span>
+
+        <span className="flex items-center gap-1">
+          <span className="inline-block w-5 h-5 rounded-full bg-amber-500/15 border border-amber-500/40 text-amber-400 text-center leading-5">✏</span>
+          <span className="text-amber-300/50">Modifica scheda (note, materiali, costi…)</span>
+        </span>
+
+        <span className="flex items-center gap-1">
+          <span className="inline-block w-5 h-5 rounded-full bg-red-500/10 border border-red-500/30 text-red-400 text-center leading-5">🗑</span>
+          <span className="text-amber-300/50">Elimina nodo</span>
+        </span>
+
+        <span className="flex items-center gap-1">
+          <span className="inline-flex gap-0.5">
+            <span className="inline-block w-4 h-4 rounded-full bg-sky-500/15 border border-sky-500/40 text-sky-400 text-center leading-4 text-[8px]">↑</span>
+            <span className="inline-block w-4 h-4 rounded-full bg-sky-500/15 border border-sky-500/40 text-sky-400 text-center leading-4 text-[8px]">↓</span>
+            <span className="inline-block w-4 h-4 rounded-full bg-sky-500/15 border border-sky-500/40 text-sky-400 text-center leading-4 text-[8px]">←</span>
+            <span className="inline-block w-4 h-4 rounded-full bg-sky-500/15 border border-sky-500/40 text-sky-400 text-center leading-4 text-[8px]">→</span>
+          </span>
+          <span className="text-amber-300/50">Riordina nello stesso livello</span>
+        </span>
+
+        <span className="flex items-center gap-1">
+          <span className="inline-flex gap-0.5">
+            <span className="inline-block h-4 px-1 rounded-full bg-emerald-500/15 border border-emerald-500/40 text-emerald-400 text-center leading-4 text-[8px] font-bold">↑LIV</span>
+            <span className="inline-block h-4 px-1 rounded-full bg-violet-500/15 border border-violet-500/40 text-violet-400 text-center leading-4 text-[8px] font-bold">↓LIV</span>
+          </span>
+          <span className="text-amber-300/50">Promuovi / Declassa livello gerarchico</span>
+        </span>
+
+        <span className="flex items-center gap-1">
+          <span className="text-amber-400/60">Aa</span>
+          <span className="text-amber-300/50">Doppio click sul nome → rinomina</span>
+        </span>
+      </div>
 
       {/* ── Pannable / scrollable tree canvas ── */}
       <div
@@ -409,41 +601,24 @@ export default function WBSTree({
           <TreeNode
             wbsCode={rootCode}
             titolo={progetto.titolo}
-            onAdd={() => onAggiungiFase(progetto.id)}
+            nodo={progetto}
+            onAdd={() => onAggiungiNodo(progetto.id, progetto.id, {})}
+            onEdit={() => setModal({ parentId: null, node: progetto })}
             onRename={t => onRinominaProgetto(progetto.id, t)}
           >
-            {/* Level 1 = Fasi */}
-            {progetto.fasi.map((fase, fi) => (
-              <TreeNode
-                key={fase.id}
-                wbsCode={`${rootCode}.${fi + 1}`}
-                titolo={fase.titolo}
-                onAdd={() => setModal({ faseId: fase.id, task: null })}
-                onRename={t => onRinominaFase(progetto.id, fase.id, t)}
-                onDelete={() => onEliminaFase(progetto.id, fase.id)}
-              >
-                {/* Level 2 = Tasks */}
-                {fase.tasks.map((task, ti) => (
-                  <TreeNode
-                    key={task.id}
-                    wbsCode={`${rootCode}.${fi + 1}.${ti + 1}`}
-                    titolo={task.titolo}
-                    onEdit={() => setModal({ faseId: fase.id, task })}
-                    onDelete={() => onEliminaTask(progetto.id, fase.id, task.id)}
-                  />
-                ))}
-              </TreeNode>
-            ))}
+            {(progetto.children || []).map((nodo, i) =>
+              renderNodo(nodo, i, progetto.children, rootCode)
+            )}
           </TreeNode>
         </div>
       </div>
 
-      {/* ── Task Modal ── */}
+      {/* ── Node Modal ── */}
       {modal && (
         <TaskModal
-          task={modal.task}
-          onSave={handleTaskSave}
-          onDelete={handleTaskDelete}
+          task={modal.node}
+          onSave={handleNodeSave}
+          onDelete={handleNodeDelete}
           onClose={() => setModal(null)}
         />
       )}

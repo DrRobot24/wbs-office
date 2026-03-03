@@ -1,8 +1,144 @@
 import { useState, useEffect, useCallback } from 'react'
 import { v4 as uuidv4 } from 'uuid'
-import { ricalcolaPercentuali } from '../utils/calcPercent'
+import { ricalcolaPercentuali, migraProgetto } from '../utils/calcPercent'
 
 const STORAGE_KEY = 'wbs-projects'
+
+/* ─── Helpers ricorsivi per navigare/modificare l'albero ─── */
+
+/** Trova il nodo con l'id dato e il suo genitore, ricorsivamente */
+function trovaNodo(nodo, id) {
+  if (nodo.id === id) return nodo
+  if (!nodo.children) return null
+  for (const child of nodo.children) {
+    const found = trovaNodo(child, id)
+    if (found) return found
+  }
+  return null
+}
+
+/** Applica una funzione di trasformazione al nodo con l'id dato (ricorsivo, immutabile) */
+function mapNodo(nodo, id, fn) {
+  if (nodo.id === id) return fn(nodo)
+  if (!nodo.children || nodo.children.length === 0) return nodo
+  return { ...nodo, children: nodo.children.map(c => mapNodo(c, id, fn)) }
+}
+
+/** Rimuove il nodo con l'id dato dall'albero (ricorsivo, immutabile) */
+function rimuoviNodo(nodo, id) {
+  if (!nodo.children) return nodo
+  const filtered = nodo.children.filter(c => c.id !== id)
+  if (filtered.length !== nodo.children.length) {
+    return { ...nodo, children: filtered }
+  }
+  return { ...nodo, children: nodo.children.map(c => rimuoviNodo(c, id)) }
+}
+
+/** Trova il genitore di un nodo con l'id dato */
+function trovaGenitore(nodo, id) {
+  if (!nodo.children) return null
+  for (const child of nodo.children) {
+    if (child.id === id) return nodo
+    const found = trovaGenitore(child, id)
+    if (found) return found
+  }
+  return null
+}
+
+/** Sposta un nodo tra i suoi fratelli (direzione: -1 su, +1 giù) */
+function spostaTratelli(nodo, nodeId, direzione) {
+  if (!nodo.children) return nodo
+  const idx = nodo.children.findIndex(c => c.id === nodeId)
+  if (idx >= 0) {
+    const newIdx = idx + direzione
+    if (newIdx < 0 || newIdx >= nodo.children.length) return nodo
+    const nuovi = [...nodo.children]
+    ;[nuovi[idx], nuovi[newIdx]] = [nuovi[newIdx], nuovi[idx]]
+    return { ...nodo, children: nuovi }
+  }
+  return { ...nodo, children: nodo.children.map(c => spostaTratelli(c, nodeId, direzione)) }
+}
+
+/** Sposta un nodo nel fratello adiacente del genitore (laterale) */
+function spostaLaterale(progetto, nodeId, direzione) {
+  const genitore = trovaGenitore(progetto, nodeId)
+  if (!genitore) return progetto
+  const nonno = trovaGenitore(progetto, genitore.id)
+  if (!nonno) return progetto // il genitore è il progetto root, non si può spostare lateralmente
+
+  const genIdx = nonno.children.findIndex(c => c.id === genitore.id)
+  const targetIdx = genIdx + direzione
+  if (targetIdx < 0 || targetIdx >= nonno.children.length) return progetto
+
+  const nodo = genitore.children.find(c => c.id === nodeId)
+  if (!nodo) return progetto
+
+  // Rimuovi dal genitore attuale, aggiungi al fratello target
+  let result = mapNodo(progetto, genitore.id, g => ({
+    ...g,
+    children: g.children.filter(c => c.id !== nodeId),
+  }))
+  const targetId = nonno.children[targetIdx].id
+  result = mapNodo(result, targetId, t => ({
+    ...t,
+    children: [...(t.children || []), nodo],
+  }))
+  return result
+}
+
+/** Promuovi un nodo: lo rimuove dal genitore e lo inserisce come fratello del genitore (sale di livello) */
+function promuovi(progetto, nodeId) {
+  const genitore = trovaGenitore(progetto, nodeId)
+  if (!genitore) return progetto
+  const nonno = trovaGenitore(progetto, genitore.id)
+  if (!nonno) {
+    // il genitore è il progetto root → il nodo sale al livello top
+    if (progetto.id === genitore.id) {
+      // nodo è già figlio del root — non può salire oltre
+      return progetto
+    }
+    return progetto
+  }
+  const nodo = genitore.children.find(c => c.id === nodeId)
+  if (!nodo) return progetto
+
+  // Rimuovi dal genitore
+  let result = mapNodo(progetto, genitore.id, g => ({
+    ...g,
+    children: g.children.filter(c => c.id !== nodeId),
+  }))
+  // Inserisci dopo il genitore nel nonno
+  result = mapNodo(result, nonno.id, n => {
+    const idx = n.children.findIndex(c => c.id === genitore.id)
+    const nuovi = [...n.children]
+    nuovi.splice(idx + 1, 0, nodo)
+    return { ...n, children: nuovi }
+  })
+  return result
+}
+
+/** Declassa un nodo: lo rimuove e lo inserisce come ultimo figlio del fratello precedente (scende di livello) */
+function declassa(progetto, nodeId) {
+  const genitore = trovaGenitore(progetto, nodeId)
+  if (!genitore) return progetto
+  const idx = genitore.children.findIndex(c => c.id === nodeId)
+  if (idx <= 0) return progetto // nessun fratello precedente
+
+  const nodo = genitore.children[idx]
+  const fratelloPrecId = genitore.children[idx - 1].id
+
+  // Rimuovi dal genitore
+  let result = mapNodo(progetto, genitore.id, g => ({
+    ...g,
+    children: g.children.filter(c => c.id !== nodeId),
+  }))
+  // Aggiungi come ultimo figlio del fratello precedente
+  result = mapNodo(result, fratelloPrecId, f => ({
+    ...f,
+    children: [...(f.children || []), nodo],
+  }))
+  return result
+}
 
 /** Progetto demo precaricato */
 function creaProgettoDemo() {
@@ -10,12 +146,12 @@ function creaProgettoDemo() {
     id: uuidv4(),
     titolo: 'Progetto Demo',
     percentuale: 0,
-    fasi: [
+    children: [
       {
         id: uuidv4(),
         titolo: 'Progettazione',
         percentuale: 0,
-        tasks: [
+        children: [
           {
             id: uuidv4(),
             titolo: 'Analisi requisiti',
@@ -23,6 +159,7 @@ function creaProgettoDemo() {
             dataScadenza: '2026-03-15',
             stato: 'done',
             percentuale: 100,
+            children: [],
           },
           {
             id: uuidv4(),
@@ -31,6 +168,7 @@ function creaProgettoDemo() {
             dataScadenza: '2026-03-20',
             stato: 'in-progress',
             percentuale: 60,
+            children: [],
           },
         ],
       },
@@ -38,7 +176,7 @@ function creaProgettoDemo() {
         id: uuidv4(),
         titolo: 'Sviluppo',
         percentuale: 0,
-        tasks: [
+        children: [
           {
             id: uuidv4(),
             titolo: 'Implementazione frontend',
@@ -46,6 +184,7 @@ function creaProgettoDemo() {
             dataScadenza: '2026-04-10',
             stato: 'in-progress',
             percentuale: 40,
+            children: [],
           },
           {
             id: uuidv4(),
@@ -54,6 +193,7 @@ function creaProgettoDemo() {
             dataScadenza: '2026-04-20',
             stato: 'todo',
             percentuale: 0,
+            children: [],
           },
         ],
       },
@@ -66,12 +206,14 @@ function caricaDaStorage() {
     const raw = localStorage.getItem(STORAGE_KEY)
     if (raw) {
       const parsed = JSON.parse(raw)
-      if (Array.isArray(parsed) && parsed.length > 0) return parsed
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        // Migra eventuali progetti vecchi (fasi/tasks → children)
+        return parsed.map(p => ricalcolaPercentuali(migraProgetto(p)))
+      }
     }
   } catch {
     // ignore
   }
-  // Se vuoto o non valido, restituisci progetto demo
   const demo = ricalcolaPercentuali(creaProgettoDemo())
   return [demo]
 }
@@ -87,7 +229,6 @@ export function useProjects() {
     return loaded.length > 0 ? loaded[0].id : null
   })
 
-  // Salva su localStorage ad ogni modifica
   useEffect(() => {
     salvaSuStorage(projects)
   }, [projects])
@@ -100,7 +241,7 @@ export function useProjects() {
       id: uuidv4(),
       titolo: 'Nuovo Progetto',
       percentuale: 0,
-      fasi: [],
+      children: [],
     })
     setProjects(prev => [...prev, nuovo])
     setActiveProjectId(nuovo.id)
@@ -126,113 +267,104 @@ export function useProjects() {
     )
   }, [])
 
-  // --- Aggiorna un progetto intero (ricalcola %) ---
-  const aggiornaProgetto = useCallback((progettoAggiornato) => {
-    setProjects(prev =>
-      prev.map(p =>
-        p.id === progettoAggiornato.id
-          ? ricalcolaPercentuali(progettoAggiornato)
-          : p
-      )
-    )
-  }, [])
+  // --- Operazioni ricorsive sui nodi ---
 
-  // --- CRUD Fasi ---
-  const aggiungiFase = useCallback((progettoId) => {
-    setProjects(prev =>
-      prev.map(p => {
-        if (p.id !== progettoId) return p
-        const nuovaFase = {
-          id: uuidv4(),
-          titolo: 'Nuova Fase',
-          percentuale: 0,
-          tasks: [],
-        }
-        return ricalcolaPercentuali({ ...p, fasi: [...p.fasi, nuovaFase] })
-      })
-    )
-  }, [])
-
-  const eliminaFase = useCallback((progettoId, faseId) => {
-    setProjects(prev =>
-      prev.map(p => {
-        if (p.id !== progettoId) return p
-        return ricalcolaPercentuali({
-          ...p,
-          fasi: p.fasi.filter(f => f.id !== faseId),
-        })
-      })
-    )
-  }, [])
-
-  const rinominaFase = useCallback((progettoId, faseId, nuovoTitolo) => {
-    setProjects(prev =>
-      prev.map(p => {
-        if (p.id !== progettoId) return p
-        return {
-          ...p,
-          fasi: p.fasi.map(f =>
-            f.id === faseId ? { ...f, titolo: nuovoTitolo } : f
-          ),
-        }
-      })
-    )
-  }, [])
-
-  // --- CRUD Tasks ---
-  const aggiungiTask = useCallback((progettoId, faseId, taskData) => {
-    const nuovoTask = {
+  /** Aggiunge un nodo figlio a qualsiasi nodo nell'albero */
+  const aggiungiNodo = useCallback((progettoId, parentId, nodeData = {}) => {
+    const nuovoNodo = {
       id: uuidv4(),
-      titolo: taskData.titolo || 'Nuovo Task',
-      responsabile: taskData.responsabile || '',
-      dataScadenza: taskData.dataScadenza || '',
-      stato: taskData.stato || 'todo',
-      percentuale: taskData.percentuale || 0,
+      titolo: nodeData.titolo || 'Nuovo Elemento',
+      responsabile: nodeData.responsabile || '',
+      dataScadenza: nodeData.dataScadenza || '',
+      dataInizio: nodeData.dataInizio || '',
+      stato: nodeData.stato || 'todo',
+      percentuale: nodeData.percentuale || 0,
+      priorita: nodeData.priorita || 'media',
+      costoTotale: nodeData.costoTotale ?? '',
+      materiali: nodeData.materiali || [],
+      note: nodeData.note || '',
+      children: [],
     }
     setProjects(prev =>
       prev.map(p => {
         if (p.id !== progettoId) return p
-        return ricalcolaPercentuali({
-          ...p,
-          fasi: p.fasi.map(f =>
-            f.id === faseId ? { ...f, tasks: [...f.tasks, nuovoTask] } : f
-          ),
-        })
+        const aggiornato = mapNodo(p, parentId, parent => ({
+          ...parent,
+          children: [...(parent.children || []), nuovoNodo],
+        }))
+        return ricalcolaPercentuali(aggiornato)
       })
     )
   }, [])
 
-  const aggiornaTask = useCallback((progettoId, faseId, taskId, taskData) => {
+  /** Elimina qualsiasi nodo dall'albero (e tutti i suoi discendenti) */
+  const eliminaNodo = useCallback((progettoId, nodeId) => {
     setProjects(prev =>
       prev.map(p => {
         if (p.id !== progettoId) return p
-        return ricalcolaPercentuali({
-          ...p,
-          fasi: p.fasi.map(f => {
-            if (f.id !== faseId) return f
-            return {
-              ...f,
-              tasks: f.tasks.map(t =>
-                t.id === taskId ? { ...t, ...taskData } : t
-              ),
-            }
-          }),
-        })
+        return ricalcolaPercentuali(rimuoviNodo(p, nodeId))
       })
     )
   }, [])
 
-  const eliminaTask = useCallback((progettoId, faseId, taskId) => {
+  /** Rinomina qualsiasi nodo */
+  const rinominaNodo = useCallback((progettoId, nodeId, nuovoTitolo) => {
     setProjects(prev =>
       prev.map(p => {
         if (p.id !== progettoId) return p
-        return ricalcolaPercentuali({
-          ...p,
-          fasi: p.fasi.map(f => {
-            if (f.id !== faseId) return f
-            return { ...f, tasks: f.tasks.filter(t => t.id !== taskId) }
-          }),
-        })
+        return mapNodo(p, nodeId, n => ({ ...n, titolo: nuovoTitolo }))
+      })
+    )
+  }, [])
+
+  /** Aggiorna le proprietà di un nodo (per il modal di editing) */
+  const aggiornaNodo = useCallback((progettoId, nodeId, data) => {
+    setProjects(prev =>
+      prev.map(p => {
+        if (p.id !== progettoId) return p
+        return ricalcolaPercentuali(
+          mapNodo(p, nodeId, n => ({ ...n, ...data }))
+        )
+      })
+    )
+  }, [])
+
+  /** Sposta un nodo su/giù tra i suoi fratelli */
+  const spostaNodo = useCallback((progettoId, nodeId, direzione) => {
+    setProjects(prev =>
+      prev.map(p => {
+        if (p.id !== progettoId) return p
+        return spostaTratelli(p, nodeId, direzione)
+      })
+    )
+  }, [])
+
+  /** Sposta un nodo lateralmente (nel fratello adiacente del genitore) */
+  const spostaNodoLaterale = useCallback((progettoId, nodeId, direzione) => {
+    setProjects(prev =>
+      prev.map(p => {
+        if (p.id !== progettoId) return p
+        return ricalcolaPercentuali(spostaLaterale(p, nodeId, direzione))
+      })
+    )
+  }, [])
+
+  /** Promuovi un nodo (sale di un livello nella gerarchia) */
+  const promuoviNodo = useCallback((progettoId, nodeId) => {
+    setProjects(prev =>
+      prev.map(p => {
+        if (p.id !== progettoId) return p
+        return ricalcolaPercentuali(promuovi(p, nodeId))
+      })
+    )
+  }, [])
+
+  /** Declassa un nodo (scende di un livello, diventa figlio del fratello precedente) */
+  const declassaNodo = useCallback((progettoId, nodeId) => {
+    setProjects(prev =>
+      prev.map(p => {
+        if (p.id !== progettoId) return p
+        return ricalcolaPercentuali(declassa(p, nodeId))
       })
     )
   }, [])
@@ -256,7 +388,7 @@ export function useProjects() {
       try {
         const data = JSON.parse(e.target.result)
         if (Array.isArray(data)) {
-          const ricalcolati = data.map(p => ricalcolaPercentuali(p))
+          const ricalcolati = data.map(p => ricalcolaPercentuali(migraProgetto(p)))
           setProjects(ricalcolati)
           setActiveProjectId(ricalcolati.length > 0 ? ricalcolati[0].id : null)
         }
@@ -275,13 +407,14 @@ export function useProjects() {
     aggiungiProgetto,
     eliminaProgetto,
     rinominaProgetto,
-    aggiornaProgetto,
-    aggiungiFase,
-    eliminaFase,
-    rinominaFase,
-    aggiungiTask,
-    aggiornaTask,
-    eliminaTask,
+    aggiungiNodo,
+    eliminaNodo,
+    rinominaNodo,
+    aggiornaNodo,
+    spostaNodo,
+    spostaNodoLaterale,
+    promuoviNodo,
+    declassaNodo,
     esportaJSON,
     importaJSON,
   }

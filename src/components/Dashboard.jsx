@@ -19,54 +19,91 @@ const statusColors = {
   'done': 'border-green-500/30 bg-green-500/10',
 }
 
-function calcolaStatoFase(fase) {
-  if (!fase.tasks || fase.tasks.length === 0) return 'todo'
-  if (fase.tasks.every(t => t.stato === 'done')) return 'done'
-  if (fase.tasks.some(t => t.stato === 'in-progress' || t.stato === 'done')) return 'in-progress'
+/** Calcola lo stato di un nodo ricorsivamente in base ai discendenti */
+function calcolaStatoNodo(nodo) {
+  const foglie = raccogliFoglie(nodo)
+  if (foglie.length === 0) return nodo.stato || 'todo'
+  if (foglie.every(f => f.stato === 'done')) return 'done'
+  if (foglie.some(f => f.stato === 'in-progress' || f.stato === 'done')) return 'in-progress'
   return 'todo'
 }
 
-function StatCard({ label, valore, icona, colore }) {
+/** Raccoglie tutte le foglie (nodi senza figli) ricorsivamente */
+function raccogliFoglie(nodo) {
+  if (!nodo.children || nodo.children.length === 0) return [nodo]
+  return nodo.children.flatMap(raccogliFoglie)
+}
+
+/** Conta tutti i discendenti diretti e indiretti */
+function contaDiscendenti(nodo) {
+  if (!nodo.children || nodo.children.length === 0) return 0
+  return nodo.children.reduce((acc, c) => acc + 1 + contaDiscendenti(c), 0)
+}
+
+/** Rendering ricorsivo dei figli dentro la card */
+function ChildrenList({ children, depth = 0 }) {
+  if (!children || children.length === 0) return null
   return (
-    <div className={`rounded-xl border px-5 py-4 flex items-center gap-4 ${colore}`}>
-      <span className="text-3xl">{icona}</span>
-      <div>
-        <p className="text-2xl font-bold text-amber-400">{valore}</p>
-        <p className="text-xs text-amber-500/50 font-medium">{label}</p>
-      </div>
+    <div className={`flex flex-col gap-1 ${depth > 0 ? 'ml-3 border-l border-amber-500/10 pl-2' : ''}`}>
+      {children.map(child => {
+        const isLeaf = !child.children || child.children.length === 0
+        const stato = isLeaf ? (child.stato || 'todo') : calcolaStatoNodo(child)
+        return (
+          <div key={child.id}>
+            <div
+              className={`flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-xs ${statusColors[stato] || statusColors['todo']} border`}
+            >
+              <span>
+                {stato === 'done' ? '✅' : stato === 'in-progress' ? '🔄' : '⬜'}
+              </span>
+              <span className="flex-1 truncate font-medium text-amber-300/80">
+                {child.titolo}
+              </span>
+              <span
+                className={`text-[10px] px-1.5 py-0.5 rounded-full font-semibold ${badgeClassi[stato]}`}
+              >
+                {child.percentuale}%
+              </span>
+            </div>
+            {!isLeaf && (
+              <ChildrenList children={child.children} depth={depth + 1} />
+            )}
+          </div>
+        )
+      })}
     </div>
   )
 }
 
-function FaseNode({ fase, faseIndex, isLast }) {
-  const statoFase = calcolaStatoFase(fase)
+function NodoFlusso({ nodo, nodoIndex, isLast }) {
+  const statoNodo = calcolaStatoNodo(nodo)
+  const discendenti = contaDiscendenti(nodo)
   const borderColor =
-    statoFase === 'done'
+    statoNodo === 'done'
       ? 'border-green-500/50 shadow-green-900/20'
-      : statoFase === 'in-progress'
+      : statoNodo === 'in-progress'
         ? 'border-amber-500/50 shadow-amber-900/20'
         : 'border-slate-600 shadow-slate-900/20'
 
   const headerBg =
-    statoFase === 'done'
+    statoNodo === 'done'
       ? 'bg-green-500/30'
-      : statoFase === 'in-progress'
+      : statoNodo === 'in-progress'
         ? 'bg-amber-500/30'
         : 'bg-slate-600/30'
 
   return (
     <div className="flex items-start">
-      {/* Card della fase */}
       <div
-        className={`border-2 rounded-xl shadow-md min-w-[220px] max-w-[280px] overflow-hidden bg-[#0d2137] ${borderColor}`}
+        className={`border-2 rounded-xl shadow-md min-w-[220px] max-w-[300px] overflow-hidden bg-[#0d2137] ${borderColor}`}
       >
-        {/* Header fase */}
+        {/* Header */}
         <div className={`${headerBg} px-4 py-2.5 flex items-center gap-2`}>
           <span className="text-amber-400 text-xs font-bold bg-amber-500/20 rounded-full px-2 py-0.5">
-            Fase {faseIndex + 1}
+            {nodoIndex + 1}
           </span>
           <span className="text-amber-300 text-sm font-semibold truncate flex-1">
-            {fase.titolo}
+            {nodo.titolo}
           </span>
         </div>
 
@@ -74,43 +111,27 @@ function FaseNode({ fase, faseIndex, isLast }) {
         <div className="px-4 pt-3 pb-1">
           <div className="flex items-center justify-between mb-1.5">
             <span className="text-xs text-amber-500/50 font-medium">Avanzamento</span>
-            <span className="text-xs font-bold text-amber-400">{fase.percentuale}%</span>
+            <span className="text-xs font-bold text-amber-400">{nodo.percentuale}%</span>
           </div>
-          <ProgressBar percentuale={fase.percentuale} altezza="h-2" />
+          <ProgressBar percentuale={nodo.percentuale} altezza="h-2" />
         </div>
 
-        {/* Tasks lista */}
-        <div className="px-4 py-3 flex flex-col gap-1.5">
-          {fase.tasks.length === 0 && (
-            <p className="text-xs text-amber-500/30 italic py-1">Nessun task</p>
+        {/* Children ricorsivi */}
+        <div className="px-4 py-3">
+          {(!nodo.children || nodo.children.length === 0) ? (
+            <p className="text-xs text-amber-500/30 italic py-1">Nessun sotto-elemento</p>
+          ) : (
+            <ChildrenList children={nodo.children} />
           )}
-          {fase.tasks.map(task => (
-            <div
-              key={task.id}
-              className={`flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-xs ${statusColors[task.stato] || statusColors['todo']} border`}
-            >
-              <span>
-                {task.stato === 'done' ? '✅' : task.stato === 'in-progress' ? '🔄' : '⬜'}
-              </span>
-              <span className="flex-1 truncate font-medium text-amber-300/80">
-                {task.titolo}
-              </span>
-              <span
-                className={`text-[10px] px-1.5 py-0.5 rounded-full font-semibold ${badgeClassi[task.stato]}`}
-              >
-                {task.percentuale}%
-              </span>
-            </div>
-          ))}
         </div>
 
         {/* Footer */}
         <div className="px-4 py-2 bg-[#091a2a] border-t border-amber-500/10 flex justify-between">
           <span className="text-[10px] text-amber-500/30">
-            {fase.tasks.length} task
+            {discendenti} {discendenti === 1 ? 'elemento' : 'elementi'}
           </span>
-          <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold ${badgeClassi[statoFase]}`}>
-            {badgeLabels[statoFase]}
+          <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold ${badgeClassi[statoNodo]}`}>
+            {badgeLabels[statoNodo]}
           </span>
         </div>
       </div>
@@ -133,12 +154,8 @@ function FaseNode({ fase, faseIndex, isLast }) {
 }
 
 export default function Dashboard({ progetto }) {
-  const tuttiTask = progetto.fasi.flatMap(f => f.tasks)
-  const totale = tuttiTask.length
-  const completati = tuttiTask.filter(t => t.stato === 'done').length
-  const inCorso = tuttiTask.filter(t => t.stato === 'in-progress').length
-  const daFare = tuttiTask.filter(t => t.stato === 'todo').length
-  const totaleFasi = progetto.fasi.length
+  const children = progetto.children || []
+  const totaleNodi = children.length
 
   return (
     <div className="flex-1 overflow-y-auto bg-[#0a1929]">
@@ -183,40 +200,21 @@ export default function Dashboard({ progetto }) {
           <ProgressBar percentuale={progetto.percentuale} altezza="h-5" />
         </div>
 
-        {/* Stat Cards */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          <StatCard label="Fasi totali" valore={totaleFasi} icona="📁" colore="bg-[#0d2137] border-amber-500/20" />
-          <StatCard label="Task totali" valore={totale} icona="📋" colore="bg-[#0d2137] border-amber-500/20" />
-          <StatCard label="Completati" valore={completati} icona="✅" colore="bg-green-500/5 border-green-500/20" />
-          <StatCard label="In corso" valore={inCorso} icona="🔄" colore="bg-amber-500/5 border-amber-500/20" />
-        </div>
-
-        {/* Mini riepilogo */}
-        <div className="grid grid-cols-3 gap-4">
-          <div className="bg-[#0d2137] border border-amber-500/15 rounded-xl p-4 text-center">
-            <p className="text-3xl font-bold text-slate-400">{daFare}</p>
-            <p className="text-xs text-amber-500/30 mt-1">Da fare</p>
-          </div>
-          <div className="bg-amber-500/5 border border-amber-500/20 rounded-xl p-4 text-center">
-            <p className="text-3xl font-bold text-amber-400">{inCorso}</p>
-            <p className="text-xs text-amber-500/40 mt-1">In corso</p>
-          </div>
-          <div className="bg-green-500/5 border border-green-500/20 rounded-xl p-4 text-center">
-            <p className="text-3xl font-bold text-green-400">{completati}</p>
-            <p className="text-xs text-green-500/40 mt-1">Completati</p>
-          </div>
-        </div>
-
         {/* Diagramma di flusso */}
         <div className="bg-[#0d2137] rounded-xl border border-amber-500/20 p-5 shadow-lg shadow-amber-900/10">
-          <h2 className="text-sm font-semibold text-amber-300 mb-5">
-            Diagramma di Flusso — Fasi del Progetto
-          </h2>
+          <div className="flex items-center justify-between mb-5">
+            <h2 className="text-sm font-semibold text-amber-300">
+              Flusso della Struttura — {totaleNodi} {totaleNodi === 1 ? 'nodo' : 'nodi'} principali
+            </h2>
+            <p className="text-[11px] text-amber-500/30">
+              Gestisci la struttura dall'Albero WBS
+            </p>
+          </div>
 
-          {progetto.fasi.length === 0 ? (
+          {children.length === 0 ? (
             <div className="text-center py-12 text-amber-500/30">
-              <p className="text-lg mb-2">Nessuna fase presente</p>
-              <p className="text-sm">Vai nell'Albero WBS per aggiungere le fasi</p>
+              <p className="text-lg mb-2">Nessun elemento presente</p>
+              <p className="text-sm">Vai nell'Albero WBS per creare la struttura</p>
             </div>
           ) : (
             <div className="overflow-x-auto pb-4">
@@ -236,13 +234,13 @@ export default function Dashboard({ progetto }) {
                   </svg>
                 </div>
 
-                {/* Nodi fase */}
-                {progetto.fasi.map((fase, i) => (
-                  <FaseNode
-                    key={fase.id}
-                    fase={fase}
-                    faseIndex={i}
-                    isLast={i === progetto.fasi.length - 1}
+                {/* Nodi principali */}
+                {children.map((nodo, i) => (
+                  <NodoFlusso
+                    key={nodo.id}
+                    nodo={nodo}
+                    nodoIndex={i}
+                    isLast={i === children.length - 1}
                   />
                 ))}
 

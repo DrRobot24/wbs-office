@@ -8,44 +8,83 @@ const STATI_LABEL = {
   'done': 'Completato',
 }
 
+const PRIORITA_LABEL = {
+  'bassa': 'Bassa',
+  'media': 'Media',
+  'alta': 'Alta',
+  'urgente': 'Urgente',
+}
+
+/** Formatta i materiali come testo sintetico per export */
+function formatMateriali(materiali) {
+  if (!materiali || materiali.length === 0) return ''
+  return materiali
+    .filter(m => m.descrizione)
+    .map(m => {
+      const parts = [m.descrizione]
+      if (m.quantita) parts.push(`(${m.quantita})`)
+      if (m.fornitore) parts.push(`- ${m.fornitore}`)
+      if (m.costo) parts.push(`€${m.costo}`)
+      return parts.join(' ')
+    })
+    .join('; ')
+}
+
+/** Calcola il costo totale dei materiali di un nodo */
+function costoMateriali(nodo) {
+  if (!nodo.materiali || nodo.materiali.length === 0) return 0
+  return nodo.materiali.reduce((acc, m) => acc + (parseFloat(m.costo) || 0), 0)
+}
+
 /**
- * Build a flat table of rows from the project hierarchy.
- * Each row: [Codice WBS, Fase, Task, Responsabile, Scadenza, Stato, %]
+ * Build a flat table of rows from the recursive project hierarchy.
  */
 function buildRows(progetto) {
   const rows = []
 
-  progetto.fasi.forEach((fase, fi) => {
-    const codFase = `${fi + 1}`
-
-    // Fase summary row
+  function visitNode(nodo, codice, livello) {
+    const isLeaf = !nodo.children || nodo.children.length === 0
+    const costoMat = costoMateriali(nodo)
     rows.push({
-      codice: codFase,
-      fase: fase.titolo,
-      task: '',
-      responsabile: '',
-      scadenza: '',
-      stato: '',
-      percentuale: `${fase.percentuale}%`,
-      isFase: true,
+      codice,
+      titolo: nodo.titolo,
+      livello,
+      responsabile: nodo.responsabile || '—',
+      priorita: PRIORITA_LABEL[nodo.priorita] || '',
+      dataInizio: nodo.dataInizio || '—',
+      scadenza: nodo.dataScadenza || '—',
+      stato: isLeaf ? (STATI_LABEL[nodo.stato] || nodo.stato || '') : '',
+      percentuale: `${nodo.percentuale}%`,
+      costoTotale: nodo.costoTotale !== '' && nodo.costoTotale !== undefined ? `€ ${Number(nodo.costoTotale).toFixed(2)}` : '',
+      costoMateriali: costoMat > 0 ? `€ ${costoMat.toFixed(2)}` : '',
+      materiali: formatMateriali(nodo.materiali),
+      note: nodo.note || '',
+      isParent: !isLeaf,
     })
 
-    // Task rows
-    fase.tasks.forEach((task, ti) => {
-      rows.push({
-        codice: `${codFase}.${ti + 1}`,
-        fase: '',
-        task: task.titolo,
-        responsabile: task.responsabile || '—',
-        scadenza: task.dataScadenza || '—',
-        stato: STATI_LABEL[task.stato] || task.stato,
-        percentuale: `${task.percentuale}%`,
-        isFase: false,
+    if (nodo.children) {
+      nodo.children.forEach((child, i) => {
+        visitNode(child, `${codice}.${i + 1}`, livello + 1)
       })
-    })
+    }
+  }
+
+  (progetto.children || []).forEach((child, i) => {
+    visitNode(child, `${i + 1}`, 1)
   })
 
   return rows
+}
+
+/** Conta tutte le foglie ricorsivamente */
+function contaFoglie(nodo) {
+  if (!nodo.children || nodo.children.length === 0) return 1
+  return nodo.children.reduce((acc, c) => acc + contaFoglie(c), 0)
+}
+
+/** Conta i nodi di primo livello */
+function contaNodi(progetto) {
+  return (progetto.children || []).length
 }
 
 /* ═══════════════════════════════════════
@@ -53,46 +92,50 @@ function buildRows(progetto) {
    ═══════════════════════════════════════ */
 export function esportaExcel(progetto) {
   const rows = buildRows(progetto)
-  const header = ['Codice WBS', 'Fase', 'Task', 'Responsabile', 'Scadenza', 'Stato', '%']
 
-  const data = rows.map(r => [
-    r.codice,
-    r.fase,
-    r.task,
-    r.responsabile,
-    r.scadenza,
-    r.stato,
-    r.percentuale,
-  ])
-
-  // Create workbook
   const wb = XLSX.utils.book_new()
 
-  // Summary sheet
+  // ── Foglio 1: WBS Principale ──
+  const header1 = ['Codice WBS', 'Titolo', 'Liv.', 'Responsabile', 'Priorità', 'Data Inizio', 'Scadenza', 'Stato', '%', 'Costo Prev.', 'Costo Mat.', 'Note']
+  const data1 = rows.map(r => [
+    r.codice, r.titolo, r.livello, r.responsabile, r.priorita,
+    r.dataInizio, r.scadenza, r.stato, r.percentuale,
+    r.costoTotale, r.costoMateriali, r.note,
+  ])
+
   const summaryData = [
     ['Progetto', progetto.titolo],
     ['Avanzamento globale', `${progetto.percentuale}%`],
-    ['Numero fasi', progetto.fasi.length],
-    ['Numero task totali', progetto.fasi.reduce((acc, f) => acc + f.tasks.length, 0)],
+    ['Nodi principali', contaNodi(progetto)],
+    ['Elementi totali (foglie)', contaFoglie(progetto)],
     [],
-    header,
-    ...data,
+    header1,
+    ...data1,
   ]
-
-  const ws = XLSX.utils.aoa_to_sheet(summaryData)
-
-  // Column widths
-  ws['!cols'] = [
-    { wch: 12 },  // Codice WBS
-    { wch: 25 },  // Fase
-    { wch: 30 },  // Task
-    { wch: 20 },  // Responsabile
-    { wch: 14 },  // Scadenza
-    { wch: 14 },  // Stato
-    { wch: 8 },   // %
+  const ws1 = XLSX.utils.aoa_to_sheet(summaryData)
+  ws1['!cols'] = [
+    { wch: 14 }, { wch: 35 }, { wch: 6 }, { wch: 20 }, { wch: 10 },
+    { wch: 14 }, { wch: 14 }, { wch: 14 }, { wch: 8 },
+    { wch: 14 }, { wch: 14 }, { wch: 40 },
   ]
+  XLSX.utils.book_append_sheet(wb, ws1, 'WBS')
 
-  XLSX.utils.book_append_sheet(wb, ws, 'WBS')
+  // ── Foglio 2: Materiali ──
+  const materialiRows = []
+  rows.forEach(r => {
+    if (r.materiali) {
+      // Scomponiamo i materiali se il nodo originale li aveva
+      // Usiamo il campo formattato come fallback
+      materialiRows.push([r.codice, r.titolo, r.materiali])
+    }
+  })
+  if (materialiRows.length > 0) {
+    const headerMat = ['Codice WBS', 'Voce', 'Materiali (Descrizione, Qtà, Fornitore, Costo)']
+    const wsMat = XLSX.utils.aoa_to_sheet([headerMat, ...materialiRows])
+    wsMat['!cols'] = [{ wch: 14 }, { wch: 30 }, { wch: 80 }]
+    XLSX.utils.book_append_sheet(wb, wsMat, 'Materiali')
+  }
+
   XLSX.writeFile(wb, `WBS_${progetto.titolo.replace(/[^a-zA-Z0-9]/g, '_')}.xlsx`)
 }
 
@@ -128,7 +171,7 @@ export function esportaPDF(progetto) {
 
   doc.setFontSize(10)
   doc.setTextColor(100, 100, 100)
-  const infoLine = `Avanzamento: ${progetto.percentuale}%  |  Fasi: ${progetto.fasi.length}  |  Task: ${progetto.fasi.reduce((a, f) => a + f.tasks.length, 0)}`
+  const infoLine = `Avanzamento: ${progetto.percentuale}%  |  Nodi: ${contaNodi(progetto)}  |  Elementi: ${contaFoglie(progetto)}`
   doc.text(infoLine, 14, y0 + 7)
 
   // ── Progress bar ──
@@ -148,16 +191,18 @@ export function esportaPDF(progetto) {
   // ── Table ──
   const tableY = barY + 12
 
-  const tableHead = [['WBS', 'Fase', 'Task', 'Responsabile', 'Scadenza', 'Stato', '%']]
+  const tableHead = [['WBS', 'Titolo', 'Liv.', 'Responsabile', 'Priorità', 'Scadenza', 'Stato', '%', 'Costo']]
 
   const tableBody = rows.map(r => [
     r.codice,
-    r.fase,
-    r.task,
+    r.titolo,
+    r.livello,
     r.responsabile,
+    r.priorita,
     r.scadenza,
     r.stato,
     r.percentuale,
+    r.costoTotale || r.costoMateriali || '',
   ])
 
   autoTable(doc, {
@@ -167,8 +212,8 @@ export function esportaPDF(progetto) {
     theme: 'grid',
     margin: { left: 14, right: 14 },
     styles: {
-      fontSize: 9,
-      cellPadding: 3,
+      fontSize: 8,
+      cellPadding: 2.5,
       lineColor: [200, 200, 200],
       lineWidth: 0.3,
     },
@@ -176,31 +221,31 @@ export function esportaPDF(progetto) {
       fillColor: [15, 27, 46],
       textColor: [245, 158, 11],
       fontStyle: 'bold',
-      fontSize: 9,
+      fontSize: 8,
     },
     bodyStyles: {
       textColor: [40, 40, 40],
     },
     columnStyles: {
       0: { cellWidth: 16, halign: 'center', fontStyle: 'bold' },
-      1: { cellWidth: 38 },
-      2: { cellWidth: 48 },
-      3: { cellWidth: 35 },
-      4: { cellWidth: 24, halign: 'center' },
+      1: { cellWidth: 50 },
+      2: { cellWidth: 8, halign: 'center' },
+      3: { cellWidth: 28 },
+      4: { cellWidth: 16, halign: 'center' },
       5: { cellWidth: 22, halign: 'center' },
-      6: { cellWidth: 14, halign: 'center', fontStyle: 'bold' },
+      6: { cellWidth: 18, halign: 'center' },
+      7: { cellWidth: 12, halign: 'center', fontStyle: 'bold' },
+      8: { cellWidth: 18, halign: 'right' },
     },
     didParseCell(data) {
-      // Highlight fase rows with a subtle background
       if (data.section === 'body') {
         const row = rows[data.row.index]
-        if (row?.isFase) {
+        if (row?.isParent) {
           data.cell.styles.fillColor = [240, 245, 255]
           data.cell.styles.fontStyle = 'bold'
         }
-
-        // Color the status cell
-        if (data.column.index === 5) {
+        // Color status
+        if (data.column.index === 6) {
           const stato = data.cell.raw
           if (stato === 'Completato') {
             data.cell.styles.textColor = [22, 163, 74]
@@ -208,6 +253,16 @@ export function esportaPDF(progetto) {
           } else if (stato === 'In corso') {
             data.cell.styles.textColor = [217, 119, 6]
             data.cell.styles.fontStyle = 'bold'
+          }
+        }
+        // Color priority
+        if (data.column.index === 4) {
+          const pri = data.cell.raw
+          if (pri === 'Urgente') {
+            data.cell.styles.textColor = [220, 38, 38]
+            data.cell.styles.fontStyle = 'bold'
+          } else if (pri === 'Alta') {
+            data.cell.styles.textColor = [234, 88, 12]
           }
         }
       }

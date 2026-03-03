@@ -13,12 +13,14 @@ export default function App() {
     aggiungiProgetto,
     eliminaProgetto,
     rinominaProgetto,
-    aggiungiFase,
-    eliminaFase,
-    rinominaFase,
-    aggiungiTask,
-    aggiornaTask,
-    eliminaTask,
+    aggiungiNodo,
+    eliminaNodo,
+    rinominaNodo,
+    aggiornaNodo,
+    spostaNodo,
+    spostaNodoLaterale,
+    promuoviNodo,
+    declassaNodo,
     esportaJSON,
     importaJSON,
   } = useProjects()
@@ -73,13 +75,15 @@ export default function App() {
             <WBSTree
               progetto={activeProject}
               progettoIndex={progettoIndex}
-              onAggiungiFase={aggiungiFase}
-              onEliminaFase={eliminaFase}
-              onRinominaFase={rinominaFase}
-              onAggiungiTask={aggiungiTask}
-              onAggiornaTask={aggiornaTask}
-              onEliminaTask={eliminaTask}
               onRinominaProgetto={rinominaProgetto}
+              onAggiungiNodo={aggiungiNodo}
+              onEliminaNodo={eliminaNodo}
+              onRinominaNodo={rinominaNodo}
+              onAggiornaNodo={aggiornaNodo}
+              onSpostaNodo={spostaNodo}
+              onSpostaNodoLaterale={spostaNodoLaterale}
+              onPromuoviNodo={promuoviNodo}
+              onDeclassaNodo={declassaNodo}
             />
           )}
         </div>
