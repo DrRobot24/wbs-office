@@ -165,14 +165,69 @@ export default function WBSTree({
       container.style.height = 'auto'
       container.style.maxHeight = 'none'
 
-      const canvas = await html2canvas(treeRef.current, {
-        backgroundColor: '#0a1929',
+      // ── Apply print-friendly theme (white bg, dark text) ──
+      const tree = treeRef.current
+      tree.style.backgroundColor = '#ffffff'
+
+      const cards = tree.querySelectorAll('.wbs-node-card')
+      const savedCardStyles = []
+      cards.forEach(card => {
+        savedCardStyles.push({
+          bg: card.style.backgroundColor,
+          border: card.style.borderColor,
+          color: card.style.color,
+        })
+        card.style.backgroundColor = '#f8fafc'
+        card.style.borderColor = '#d97706'
+      })
+
+      // Change text colors to dark for readability on white
+      const amberTexts = tree.querySelectorAll('[class*="text-amber"]')
+      const savedTextColors = []
+      amberTexts.forEach(el => {
+        savedTextColors.push(el.style.color)
+        // WBS codes → dark amber, titles → dark gray
+        if (el.classList.contains('font-bold') && el.textContent.match(/^\d/)) {
+          el.style.color = '#92400e' // amber-800
+        } else {
+          el.style.color = '#1e293b' // slate-800
+        }
+      })
+
+      // Change connector lines to dark
+      const connectors = tree.querySelectorAll('.wbs-child-wrapper, .wbs-children-row')
+      const vLines = tree.querySelectorAll('.bg-amber-500\\/30')
+      const savedLineBgs = []
+      vLines.forEach(line => {
+        savedLineBgs.push(line.style.backgroundColor)
+        line.style.backgroundColor = '#d97706'
+      })
+
+      // Hide action buttons for cleaner print
+      const actionBtns = tree.querySelectorAll('button')
+      const savedBtnDisplay = []
+      actionBtns.forEach(btn => {
+        savedBtnDisplay.push(btn.style.display)
+        btn.style.display = 'none'
+      })
+
+      const canvas = await html2canvas(tree, {
+        backgroundColor: '#ffffff',
         scale: 2,
         useCORS: true,
         logging: false,
       })
 
-      // Restore container
+      // ── Restore original dark theme ──
+      tree.style.backgroundColor = ''
+      cards.forEach((card, i) => {
+        card.style.backgroundColor = savedCardStyles[i].bg
+        card.style.borderColor = savedCardStyles[i].border
+        card.style.color = savedCardStyles[i].color
+      })
+      amberTexts.forEach((el, i) => { el.style.color = savedTextColors[i] })
+      vLines.forEach((line, i) => { line.style.backgroundColor = savedLineBgs[i] })
+      actionBtns.forEach((btn, i) => { btn.style.display = savedBtnDisplay[i] })
       container.style.overflow = prevOverflow
       container.style.height = prevHeight
       container.style.maxHeight = prevMaxHeight
@@ -196,19 +251,28 @@ export default function WBSTree({
 
       const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' })
 
-      // ── Branded header ──
+      // ── Branded header (white-friendly) ──
       const drawHeader = (pageNum, totalPages) => {
-        doc.setFillColor(15, 27, 46)
+        // Subtle light header band
+        doc.setFillColor(248, 250, 252) // slate-50
         doc.rect(0, 0, pdfW, headerH, 'F')
+        doc.setDrawColor(217, 119, 6) // amber-600
+        doc.setLineWidth(0.8)
+        doc.line(0, headerH, pdfW, headerH)
+
         doc.setFont('helvetica', 'bold')
         doc.setFontSize(16)
-        doc.setTextColor(245, 158, 11)
+        doc.setTextColor(15, 23, 42) // slate-900
         doc.text('WBS Office – Albero WBS', margin, 14)
+
         doc.setFontSize(9)
-        doc.setTextColor(160, 160, 160)
+        doc.setFont('helvetica', 'normal')
+        doc.setTextColor(71, 85, 105) // slate-600
         doc.text(`Progetto: ${progetto.titolo}`, margin, 21)
+        doc.setTextColor(146, 64, 14) // amber-800
         doc.text(`Avanzamento: ${progetto.percentuale}%`, margin, 26)
-        doc.setTextColor(100, 100, 100)
+
+        doc.setTextColor(100, 116, 139) // slate-500
         doc.text(`Pagina ${pageNum} / ${totalPages}`, pdfW - margin, 26, { align: 'right' })
         doc.text(new Date().toLocaleDateString('it-IT'), pdfW - margin, 21, { align: 'right' })
       }
