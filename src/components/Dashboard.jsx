@@ -1,4 +1,5 @@
 import ProgressBar from './ProgressBar'
+import { esportaExcel, esportaPDF } from '../utils/exportWBS'
 
 const badgeClassi = {
   'todo': 'bg-slate-600/40 text-slate-300',
@@ -143,11 +144,33 @@ export default function Dashboard({ progetto }) {
     <div className="flex-1 overflow-y-auto bg-[#0a1929]">
       {/* Header */}
       <div className="bg-[#0d2137] border-b border-amber-500/20 px-6 py-5">
-        <div className="flex items-center gap-3 mb-1">
-          <span className="text-2xl">📊</span>
-          <h1 className="text-xl font-bold text-amber-400">{progetto.titolo}</h1>
+        <div className="flex items-center justify-between">
+          <div>
+            <div className="flex items-center gap-3 mb-1">
+              <span className="text-2xl">📊</span>
+              <h1 className="text-xl font-bold text-amber-400">{progetto.titolo}</h1>
+            </div>
+            <p className="text-sm text-amber-500/40 ml-10">Dashboard di progetto</p>
+          </div>
+          <div className="flex gap-2">
+            <button
+              onClick={() => esportaExcel(progetto)}
+              className="flex items-center gap-1.5 px-4 py-2 bg-green-500/15 hover:bg-green-500/25 border border-green-500/30 hover:border-green-500/50 text-green-400 rounded-lg text-xs font-semibold transition-all cursor-pointer"
+              title="Esporta in Excel"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+              Excel
+            </button>
+            <button
+              onClick={() => esportaPDF(progetto)}
+              className="flex items-center gap-1.5 px-4 py-2 bg-red-500/15 hover:bg-red-500/25 border border-red-500/30 hover:border-red-500/50 text-red-400 rounded-lg text-xs font-semibold transition-all cursor-pointer"
+              title="Esporta in PDF"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>
+              PDF
+            </button>
+          </div>
         </div>
-        <p className="text-sm text-amber-500/40 ml-10">Dashboard di progetto</p>
       </div>
 
       <div className="p-6 space-y-8">
