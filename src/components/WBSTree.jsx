@@ -171,15 +171,73 @@ export default function WBSTree({
       const btns = tree.querySelectorAll('button')
       btns.forEach(b => b.style.display = 'none')
 
+      // ── Apply print-friendly light theme temporarily ──
+      const savedStyles = new Map()
+
+      // Tree background → white
+      savedStyles.set(tree, { backgroundColor: tree.style.backgroundColor })
+      tree.style.backgroundColor = '#ffffff'
+
+      // Cards → light bg, dark amber border
+      tree.querySelectorAll('.wbs-node-card').forEach(card => {
+        savedStyles.set(card, {
+          backgroundColor: card.style.backgroundColor,
+          borderColor: card.style.borderColor,
+          boxShadow: card.style.boxShadow,
+        })
+        card.style.backgroundColor = '#f8fafc'
+        card.style.borderColor = '#b45309'
+        card.style.boxShadow = '0 2px 6px rgba(0,0,0,0.1)'
+      })
+
+      // Text → dark colors
+      const allEls = tree.querySelectorAll('*')
+      allEls.forEach(el => {
+        const computed = getComputedStyle(el)
+        const color = computed.color
+        const m = color?.match(/rgba?\(\s*(\d+),\s*(\d+),\s*(\d+)/)
+        if (m) {
+          const [, r, g, b] = m.map(Number)
+          const lum = r * 0.299 + g * 0.587 + b * 0.114
+          if (lum > 100) {
+            savedStyles.set(el, { ...(savedStyles.get(el) || {}), color: el.style.color })
+            el.style.color = (r > 150 && g > 100 && b < 80) ? '#92400e' : '#1e293b'
+          }
+        }
+      })
+
+      // Connector lines → dark
+      tree.querySelectorAll('[class*="bg-amber"]').forEach(el => {
+        if (!savedStyles.has(el)) savedStyles.set(el, {})
+        savedStyles.get(el).backgroundColor = el.style.backgroundColor
+        el.style.backgroundColor = '#b45309'
+      })
+
+      // Inject CSS override for pseudo-element connectors
+      const printCSS = document.createElement('style')
+      printCSS.textContent = `
+        .wbs-child-wrapper::before, .wbs-child-wrapper::after {
+          background-color: #b45309 !important;
+        }
+      `
+      document.head.appendChild(printCSS)
+
       // Capture the tree using html-to-image (native browser rendering — supports oklch)
       const dataUrl = await toPng(tree, {
-        backgroundColor: '#0a1929',
+        backgroundColor: '#ffffff',
         pixelRatio: 2,
         filter: (node) => {
-          // Filter out hidden buttons (already hidden, but be safe)
           if (node.tagName === 'BUTTON') return false
           return true
         },
+      })
+
+      // ── Restore original dark theme ──
+      document.head.removeChild(printCSS)
+      savedStyles.forEach((saved, el) => {
+        Object.entries(saved).forEach(([prop, val]) => {
+          el.style[prop] = val || ''
+        })
       })
 
       // Restore buttons & container
@@ -212,20 +270,24 @@ export default function WBSTree({
 
       const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' })
 
-      // ── Branded header ──
+      // ── Branded header (light) ──
       const drawHeader = (pageNum, totalPages) => {
-        doc.setFillColor(15, 27, 46)
+        doc.setFillColor(248, 250, 252)
         doc.rect(0, 0, pdfW, headerH, 'F')
+        doc.setDrawColor(180, 83, 9)
+        doc.setLineWidth(0.8)
+        doc.line(0, headerH, pdfW, headerH)
         doc.setFont('helvetica', 'bold')
         doc.setFontSize(16)
-        doc.setTextColor(245, 158, 11)
-        doc.text('WBS Office – Albero WBS', margin, 14)
+        doc.setTextColor(15, 23, 42)
+        doc.text('WBS Office \u2013 Albero WBS', margin, 14)
         doc.setFontSize(9)
         doc.setFont('helvetica', 'normal')
-        doc.setTextColor(180, 180, 180)
+        doc.setTextColor(71, 85, 105)
         doc.text(`Progetto: ${progetto.titolo}`, margin, 21)
+        doc.setTextColor(146, 64, 14)
         doc.text(`Avanzamento: ${progetto.percentuale}%`, margin, 26)
-        doc.setTextColor(100, 100, 100)
+        doc.setTextColor(100, 116, 139)
         doc.text(`Pagina ${pageNum} / ${totalPages}`, pdfW - margin, 26, { align: 'right' })
         doc.text(new Date().toLocaleDateString('it-IT'), pdfW - margin, 21, { align: 'right' })
       }
