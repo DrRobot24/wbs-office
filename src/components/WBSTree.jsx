@@ -169,6 +169,15 @@ export default function WBSTree({
       const tree = treeRef.current
       tree.setAttribute('data-print-root', '1')
 
+      // ── Canvas2D color resolver: converts ANY CSS color (incl. oklch) → hex ──
+      const resolverCtx = document.createElement('canvas').getContext('2d')
+      function resolveToHex(cssColor) {
+        if (!cssColor || cssColor === 'transparent' || cssColor === 'rgba(0, 0, 0, 0)') return 'transparent'
+        resolverCtx.fillStyle = '#010101' // reset to a known value
+        resolverCtx.fillStyle = cssColor
+        return resolverCtx.fillStyle // returns #rrggbb or stays #010101 if invalid
+      }
+
       const canvas = await html2canvas(tree, {
         backgroundColor: '#ffffff',
         scale: 2,
@@ -179,90 +188,117 @@ export default function WBSTree({
           const clonedTree = clonedDoc.querySelector('[data-print-root]')
           if (!clonedTree || !win) return
 
-          const colorProps = [
-            'color', 'backgroundColor', 'borderColor',
-            'borderTopColor', 'borderBottomColor',
-            'borderLeftColor', 'borderRightColor',
-            'outlineColor', 'textDecorationColor',
-          ]
-
-          // Process ALL elements: replace oklch computed colors with safe RGB
-          const allEls = [clonedTree, ...clonedTree.querySelectorAll('*')]
-          allEls.forEach(el => {
-            const computed = win.getComputedStyle(el)
-
-            colorProps.forEach(prop => {
-              const val = computed[prop]
-              if (val && val.includes('oklch')) {
-                // Map to a reasonable fallback based on property type
-                if (prop === 'backgroundColor') {
-                  el.style[prop] = 'transparent'
-                } else if (prop === 'color') {
-                  el.style[prop] = '#1e293b'
-                } else if (prop.includes('order')) {
-                  el.style[prop] = '#d97706'
-                } else {
-                  el.style[prop] = 'transparent'
-                }
-              }
-            })
-
-            // Also handle box-shadow which can contain oklch
-            const shadow = computed.boxShadow
-            if (shadow && shadow.includes('oklch')) {
-              el.style.boxShadow = 'none'
-            }
+          // ── STEP 1: Nuke ALL oklch from the cloned document ──
+          // Remove all <style> and <link rel=stylesheet> to eliminate oklch sources
+          const stylesheets = clonedDoc.querySelectorAll('style, link[rel="stylesheet"]')
+          const removedSheets = []
+          stylesheets.forEach(s => {
+            removedSheets.push({ el: s, parent: s.parentNode })
+            s.remove()
           })
 
-          // ── Apply print-friendly theme on the clone ──
-          clonedTree.style.backgroundColor = '#ffffff'
+          // ── STEP 2: Bake all visual styles as inline on every element ──
+          // (read computed styles from the ORIGINAL document's elements
+          //  which the browser resolves to rgb, then use canvas resolver as backup)
+          const origTree = tree
+          const origEls = [origTree, ...origTree.querySelectorAll('*')]
+          const cloneEls = [clonedTree, ...clonedTree.querySelectorAll('*')]
+
+          const cssColorProps = [
+            'color', 'background-color', 'border-top-color', 'border-right-color',
+            'border-bottom-color', 'border-left-color', 'outline-color',
+          ]
+          const cssLayoutProps = [
+            'display', 'position', 'flex-direction', 'align-items', 'justify-content',
+            'gap', 'padding', 'margin', 'width', 'min-width', 'max-width',
+            'height', 'min-height', 'font-size', 'font-weight', 'font-family',
+            'text-align', 'line-height', 'letter-spacing', 'border-width',
+            'border-style', 'border-radius', 'overflow', 'opacity', 'white-space',
+            'box-sizing',
+          ]
+
+          for (let i = 0; i < origEls.length && i < cloneEls.length; i++) {
+            const origComputed = getComputedStyle(origEls[i])
+            const cloneEl = cloneEls[i]
+
+            // Bake color properties (resolved to rgb by the browser)
+            cssColorProps.forEach(prop => {
+              let val = origComputed.getPropertyValue(prop)
+              if (val && val.includes('oklch')) {
+                val = resolveToHex(val)
+              }
+              cloneEl.style.setProperty(prop, val, 'important')
+            })
+
+            // Bake layout properties
+            cssLayoutProps.forEach(prop => {
+              const val = origComputed.getPropertyValue(prop)
+              if (val) cloneEl.style.setProperty(prop, val)
+            })
+
+            // box-shadow
+            const shadow = origComputed.getPropertyValue('box-shadow')
+            if (shadow && shadow !== 'none') {
+              if (shadow.includes('oklch')) {
+                cloneEl.style.setProperty('box-shadow', 'none', 'important')
+              } else {
+                cloneEl.style.setProperty('box-shadow', shadow)
+              }
+            }
+          }
+
+          // ── STEP 3: Apply print-friendly theme overrides on the clone ──
+          clonedTree.style.setProperty('background-color', '#ffffff', 'important')
 
           // Style each card
           clonedTree.querySelectorAll('.wbs-node-card').forEach(card => {
-            card.style.backgroundColor = '#f8fafc'
-            card.style.borderColor = '#d97706'
-            card.style.borderWidth = '2px'
-            card.style.borderStyle = 'solid'
-            card.style.boxShadow = '0 1px 4px rgba(0,0,0,0.1)'
+            card.style.setProperty('background-color', '#f8fafc', 'important')
+            card.style.setProperty('border-color', '#d97706', 'important')
+            card.style.setProperty('border-top-color', '#d97706', 'important')
+            card.style.setProperty('border-right-color', '#d97706', 'important')
+            card.style.setProperty('border-bottom-color', '#d97706', 'important')
+            card.style.setProperty('border-left-color', '#d97706', 'important')
+            card.style.setProperty('border-width', '2px', 'important')
+            card.style.setProperty('border-style', 'solid', 'important')
+            card.style.setProperty('box-shadow', '0 1px 4px rgba(0,0,0,0.12)', 'important')
           })
 
-          // Dark text for readability on white
-          allEls.forEach(el => {
-            const computed = win.getComputedStyle(el)
-            const color = computed.color
+          // Make text dark for white background
+          cloneEls.forEach(el => {
+            const color = el.style.getPropertyValue('color')
             if (color) {
-              const match = color.match(/rgba?\(\s*(\d+),\s*(\d+),\s*(\d+)/)
-              if (match) {
-                const [, r, g, b] = match.map(Number)
+              const m = color.match(/rgba?\(\s*(\d+),\s*(\d+),\s*(\d+)/)
+              if (m) {
+                const [, r, g, b] = m.map(Number)
                 const lum = r * 0.299 + g * 0.587 + b * 0.114
                 if (lum > 120) {
-                  // Light text → dark
-                  el.style.color = (r > 150 && g > 100 && b < 100)
-                    ? '#92400e'  // amber-ish → dark amber
-                    : '#1e293b'  // else → slate-800
+                  el.style.setProperty('color',
+                    (r > 150 && g > 100 && b < 100) ? '#92400e' : '#1e293b',
+                    'important'
+                  )
                 }
               }
             }
           })
 
-          // Dark connectors
+          // Dark connectors (the vertical line divs)
           clonedTree.querySelectorAll('[class*="bg-amber"]').forEach(el => {
-            el.style.backgroundColor = '#d97706'
+            el.style.setProperty('background-color', '#d97706', 'important')
           })
 
-          // CSS pseudo-element connectors → inject override
-          const styleTag = clonedDoc.createElement('style')
-          styleTag.textContent = `
+          // Inject CSS for pseudo-element connectors
+          const printStyle = clonedDoc.createElement('style')
+          printStyle.textContent = `
             .wbs-child-wrapper::before,
             .wbs-child-wrapper::after {
               background-color: #d97706 !important;
             }
           `
-          clonedDoc.head.appendChild(styleTag)
+          clonedDoc.head.appendChild(printStyle)
 
           // Hide action buttons
           clonedTree.querySelectorAll('button').forEach(btn => {
-            btn.style.display = 'none'
+            btn.style.setProperty('display', 'none', 'important')
           })
         },
       })
