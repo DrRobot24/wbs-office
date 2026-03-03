@@ -294,49 +294,51 @@ export default function WBSTree({
       savedStyles.set(tree, { backgroundColor: tree.style.backgroundColor })
       tree.style.backgroundColor = '#ffffff'
 
-      // Cards → light bg, dark amber border
-      tree.querySelectorAll('.wbs-node-card').forEach(card => {
-        savedStyles.set(card, {
-          backgroundColor: card.style.backgroundColor,
-          borderColor: card.style.borderColor,
-          boxShadow: card.style.boxShadow,
-        })
-        card.style.backgroundColor = '#f8fafc'
-        card.style.borderColor = '#b45309'
-        card.style.boxShadow = '0 2px 6px rgba(0,0,0,0.1)'
-      })
-
-      // Text → dark colors
-      const allEls = tree.querySelectorAll('*')
-      allEls.forEach(el => {
-        const computed = getComputedStyle(el)
-        const color = computed.color
-        const m = color?.match(/rgba?\(\s*(\d+),\s*(\d+),\s*(\d+)/)
-        if (m) {
-          const [, r, g, b] = m.map(Number)
-          const lum = r * 0.299 + g * 0.587 + b * 0.114
-          if (lum > 100) {
-            savedStyles.set(el, { ...(savedStyles.get(el) || {}), color: el.style.color })
-            el.style.color = (r > 150 && g > 100 && b < 80) ? '#92400e' : '#1e293b'
-          }
-        }
-      })
-
-      // Connector lines → dark
-      tree.querySelectorAll('[class*="bg-amber"]').forEach(el => {
-        if (!savedStyles.has(el)) savedStyles.set(el, {})
-        savedStyles.get(el).backgroundColor = el.style.backgroundColor
-        el.style.backgroundColor = '#b45309'
-      })
-
-      // Inject CSS override for pseudo-element connectors
+      // Inject comprehensive print-override CSS with !important to beat Tailwind
       const printCSS = document.createElement('style')
       printCSS.textContent = `
+        .wbs-node-card {
+          background-color: #ffffff !important;
+          border-color: #92400e !important;
+          box-shadow: 0 1px 4px rgba(0,0,0,0.12) !important;
+        }
+        .wbs-node-card * {
+          color: #1e293b !important;
+        }
+        .wbs-node-card .text-amber-400,
+        .wbs-node-card .text-amber-300\\/90 {
+          color: #92400e !important;
+        }
+        .wbs-node-card span[class*="bg-red"], .wbs-node-card span[class*="bg-blue"],
+        .wbs-node-card span[class*="bg-emerald"], .wbs-node-card span[class*="bg-violet"],
+        .wbs-node-card span[class*="bg-orange"], .wbs-node-card span[class*="bg-amber"],
+        .wbs-node-card span[class*="bg-slate"] {
+          background-color: #f1f5f9 !important;
+          border-color: #94a3b8 !important;
+          color: #334155 !important;
+        }
         .wbs-child-wrapper::before, .wbs-child-wrapper::after {
-          background-color: #b45309 !important;
+          background-color: #92400e !important;
+        }
+        [class*="bg-amber-500\\/30"], [class*="bg-amber-500\\/20"] {
+          background-color: #92400e !important;
+        }
+        .w-px.bg-amber-500\\/30, .h-px.bg-amber-500\\/30,
+        [class*="w-px"][class*="bg-amber"], [class*="h-px"][class*="bg-amber"] {
+          background-color: #92400e !important;
         }
       `
       document.head.appendChild(printCSS)
+
+      // Also force connector lines via inline for reliability
+      tree.querySelectorAll('[class*="bg-amber"]').forEach(el => {
+        const tag = el.tagName
+        if (tag !== 'BUTTON' && tag !== 'SPAN') {
+          if (!savedStyles.has(el)) savedStyles.set(el, {})
+          savedStyles.get(el).backgroundColor = el.style.backgroundColor
+          el.style.backgroundColor = '#92400e'
+        }
+      })
 
       // Capture the tree using html-to-image (native browser rendering — supports oklch)
       const dataUrl = await toPng(tree, {
