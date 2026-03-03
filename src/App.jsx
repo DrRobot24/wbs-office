@@ -27,7 +27,7 @@ export default function App() {
   const progettoIndex = projects.findIndex(p => p.id === activeProjectId)
 
   return (
-    <div className="flex h-screen bg-slate-50">
+    <div className="flex h-screen bg-[#0a1929]">
       {/* Sidebar */}
       <Sidebar
         projects={projects}
@@ -43,13 +43,13 @@ export default function App() {
       {activeProject ? (
         <div className="flex-1 flex flex-col overflow-hidden">
           {/* Tab Navigation */}
-          <div className="bg-white border-b border-slate-200 px-6 flex gap-1 pt-2">
+          <div className="bg-[#0d2137] border-b border-amber-500/20 px-6 flex gap-1 pt-2">
             <button
               onClick={() => setVista('dashboard')}
               className={`px-4 py-2.5 text-sm font-medium rounded-t-lg transition-colors cursor-pointer ${
                 vista === 'dashboard'
-                  ? 'bg-slate-50 text-indigo-600 border border-slate-200 border-b-slate-50 -mb-px'
-                  : 'text-slate-500 hover:text-slate-700'
+                  ? 'bg-[#0a1929] text-amber-400 border border-amber-500/30 border-b-[#0a1929] -mb-px'
+                  : 'text-amber-500/40 hover:text-amber-400'
               }`}
             >
               📊 Dashboard
@@ -58,8 +58,8 @@ export default function App() {
               onClick={() => setVista('wbs')}
               className={`px-4 py-2.5 text-sm font-medium rounded-t-lg transition-colors cursor-pointer ${
                 vista === 'wbs'
-                  ? 'bg-slate-50 text-indigo-600 border border-slate-200 border-b-slate-50 -mb-px'
-                  : 'text-slate-500 hover:text-slate-700'
+                  ? 'bg-[#0a1929] text-amber-400 border border-amber-500/30 border-b-[#0a1929] -mb-px'
+                  : 'text-amber-500/40 hover:text-amber-400'
               }`}
             >
               🌳 Albero WBS
@@ -84,10 +84,10 @@ export default function App() {
           )}
         </div>
       ) : (
-        <div className="flex-1 flex items-center justify-center text-slate-400">
+        <div className="flex-1 flex items-center justify-center text-amber-500/40">
           <div className="text-center">
             <p className="text-5xl mb-4">📊</p>
-            <p className="text-lg font-medium">WBS Office</p>
+            <p className="text-lg font-medium text-amber-400">WBS Office</p>
             <p className="text-sm mt-1">
               Seleziona o crea un progetto per iniziare
             </p>

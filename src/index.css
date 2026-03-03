@@ -1,1 +1,54 @@
 @import "tailwindcss";
+
+/* ══════════════════════════════════════════
+   WBS Tree – connector lines between nodes
+   ══════════════════════════════════════════ */
+
+.wbs-child-wrapper {
+  position: relative;
+  padding-top: 40px; /* space for connector lines */
+}
+
+/* Horizontal connector segment (part of the bar linking siblings) */
+.wbs-child-wrapper::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  height: 1px;
+  background: rgba(245, 158, 11, 0.3);
+}
+
+/* first child → line from center to right edge */
+.wbs-child-wrapper:first-child::before {
+  left: 50%;
+  right: 0;
+}
+
+/* last child → line from left edge to center */
+.wbs-child-wrapper:last-child::before {
+  left: 0;
+  right: 50%;
+}
+
+/* middle children → full width */
+.wbs-child-wrapper:not(:first-child):not(:last-child)::before {
+  left: 0;
+  right: 0;
+}
+
+/* only child → no horizontal line needed */
+.wbs-child-wrapper:only-child::before {
+  display: none;
+}
+
+/* Vertical connector from horizontal bar down to child node */
+.wbs-child-wrapper::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 1px;
+  height: 40px;
+  background: rgba(245, 158, 11, 0.3);
+}

@@ -46,57 +46,57 @@ export default function TaskModal({ task, onSave, onDelete, onClose }) {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-      <div className="bg-white rounded-xl shadow-2xl w-full max-w-md mx-4 p-6">
-        <h2 className="text-lg font-bold text-slate-800 mb-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
+      <div className="bg-[#0d2137] border border-amber-500/30 rounded-xl shadow-2xl shadow-amber-900/20 w-full max-w-md mx-4 p-6">
+        <h2 className="text-lg font-bold text-amber-400 mb-4">
           {isEdit ? 'Modifica Task' : 'Nuovo Task'}
         </h2>
 
         {/* Titolo */}
-        <label className="block mb-1 text-sm font-medium text-slate-600">
-          Titolo <span className="text-red-500">*</span>
+        <label className="block mb-1 text-sm font-medium text-amber-300/70">
+          Titolo <span className="text-red-400">*</span>
         </label>
         <input
           type="text"
           value={form.titolo}
           onChange={e => handleChange('titolo', e.target.value)}
-          className="w-full border border-slate-300 rounded-lg px-3 py-2 mb-1 focus:outline-none focus:ring-2 focus:ring-indigo-400 text-sm"
+          className="w-full bg-[#0a1628] border border-amber-500/30 rounded-lg px-3 py-2 mb-1 focus:outline-none focus:ring-2 focus:ring-amber-400/50 text-sm text-amber-300"
           placeholder="Titolo del task"
           autoFocus
         />
-        {errore && <p className="text-red-500 text-xs mb-2">{errore}</p>}
+        {errore && <p className="text-red-400 text-xs mb-2">{errore}</p>}
 
         {/* Responsabile */}
-        <label className="block mb-1 mt-3 text-sm font-medium text-slate-600">
+        <label className="block mb-1 mt-3 text-sm font-medium text-amber-300/70">
           Responsabile
         </label>
         <input
           type="text"
           value={form.responsabile}
           onChange={e => handleChange('responsabile', e.target.value)}
-          className="w-full border border-slate-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-400 text-sm"
+          className="w-full bg-[#0a1628] border border-amber-500/30 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-amber-400/50 text-sm text-amber-300"
           placeholder="Nome responsabile"
         />
 
         {/* Data Scadenza */}
-        <label className="block mb-1 mt-3 text-sm font-medium text-slate-600">
+        <label className="block mb-1 mt-3 text-sm font-medium text-amber-300/70">
           Data Scadenza
         </label>
         <input
           type="date"
           value={form.dataScadenza}
           onChange={e => handleChange('dataScadenza', e.target.value)}
-          className="w-full border border-slate-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-400 text-sm"
+          className="w-full bg-[#0a1628] border border-amber-500/30 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-amber-400/50 text-sm text-amber-300"
         />
 
         {/* Stato */}
-        <label className="block mb-1 mt-3 text-sm font-medium text-slate-600">
+        <label className="block mb-1 mt-3 text-sm font-medium text-amber-300/70">
           Stato
         </label>
         <select
           value={form.stato}
           onChange={e => handleChange('stato', e.target.value)}
-          className="w-full border border-slate-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-400 text-sm"
+          className="w-full bg-[#0a1628] border border-amber-500/30 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-amber-400/50 text-sm text-amber-300"
         >
           {statiOptions.map(s => (
             <option key={s.value} value={s.value}>
@@ -106,7 +106,7 @@ export default function TaskModal({ task, onSave, onDelete, onClose }) {
         </select>
 
         {/* Percentuale */}
-        <label className="block mb-1 mt-3 text-sm font-medium text-slate-600">
+        <label className="block mb-1 mt-3 text-sm font-medium text-amber-300/70">
           Percentuale (0–100)
         </label>
         <input
@@ -115,7 +115,7 @@ export default function TaskModal({ task, onSave, onDelete, onClose }) {
           max="100"
           value={form.percentuale}
           onChange={e => handleChange('percentuale', e.target.value)}
-          className="w-full border border-slate-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-400 text-sm"
+          className="w-full bg-[#0a1628] border border-amber-500/30 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-amber-400/50 text-sm text-amber-300"
         />
 
         {/* Azioni */}
@@ -124,7 +124,7 @@ export default function TaskModal({ task, onSave, onDelete, onClose }) {
             {isEdit && (
               <button
                 onClick={onDelete}
-                className="text-sm text-red-500 hover:text-red-700 font-medium cursor-pointer"
+                className="text-sm text-red-400 hover:text-red-300 font-medium cursor-pointer"
               >
                 Elimina
               </button>
@@ -133,13 +133,13 @@ export default function TaskModal({ task, onSave, onDelete, onClose }) {
           <div className="flex gap-2">
             <button
               onClick={onClose}
-              className="px-4 py-2 text-sm rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 cursor-pointer"
+              className="px-4 py-2 text-sm rounded-lg bg-slate-700/50 hover:bg-slate-700 text-amber-500/50 hover:text-amber-400 border border-amber-500/20 cursor-pointer"
             >
               Annulla
             </button>
             <button
               onClick={handleSave}
-              className="px-4 py-2 text-sm rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-medium cursor-pointer"
+              className="px-4 py-2 text-sm rounded-lg bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/50 text-amber-400 font-medium cursor-pointer"
             >
               Salva
             </button>

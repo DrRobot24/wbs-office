@@ -19,18 +19,21 @@ export default function Sidebar({
   }
 
   return (
-    <aside className="w-64 bg-slate-900 text-white flex flex-col min-h-screen">
+    <aside className="w-64 bg-[#071222] text-white flex flex-col min-h-screen border-r border-amber-500/10">
       {/* Logo / Titolo */}
-      <div className="px-5 py-5 border-b border-slate-700">
+      <div className="px-5 py-5 border-b border-amber-500/15">
         <h1 className="text-lg font-bold tracking-tight flex items-center gap-2">
-          <span>📊</span> WBS Office
+          <div className="w-8 h-8 rounded-full bg-amber-500/20 border-2 border-amber-500/50 flex items-center justify-center shrink-0">
+            <span className="text-amber-400 font-bold text-xs">RS</span>
+          </div>
+          <span className="text-amber-400">WBS Office</span>
         </h1>
-        <p className="text-xs text-slate-400 mt-1">Work Breakdown Structure</p>
+        <p className="text-xs text-amber-500/30 mt-1">Work Breakdown Structure</p>
       </div>
 
       {/* Lista progetti */}
       <div className="flex-1 overflow-y-auto py-3">
-        <p className="px-5 text-xs text-slate-500 uppercase tracking-wider mb-2 font-medium">
+        <p className="px-5 text-xs text-amber-500/30 uppercase tracking-wider mb-2 font-medium">
           Progetti
         </p>
         {projects.map(p => (
@@ -38,13 +41,13 @@ export default function Sidebar({
             key={p.id}
             className={`flex items-center gap-2 px-5 py-2.5 cursor-pointer transition-colors group ${
               p.id === activeProjectId
-                ? 'bg-indigo-600/30 border-r-2 border-indigo-400 text-white'
-                : 'text-slate-300 hover:bg-slate-800'
+                ? 'bg-amber-500/15 border-r-2 border-amber-400 text-amber-300'
+                : 'text-amber-500/50 hover:bg-amber-500/5 hover:text-amber-400'
             }`}
             onClick={() => onSelectProject(p.id)}
           >
             <span className="flex-1 text-sm truncate">{p.titolo}</span>
-            <span className="text-xs text-slate-500">{p.percentuale}%</span>
+            <span className="text-xs text-amber-500/30">{p.percentuale}%</span>
             <button
               onClick={e => {
                 e.stopPropagation()
@@ -61,31 +64,31 @@ export default function Sidebar({
         ))}
 
         {projects.length === 0 && (
-          <p className="px-5 text-xs text-slate-500 italic py-4">
+          <p className="px-5 text-xs text-amber-500/20 italic py-4">
             Nessun progetto
           </p>
         )}
       </div>
 
       {/* Azioni in basso */}
-      <div className="p-4 border-t border-slate-700 flex flex-col gap-2">
+      <div className="p-4 border-t border-amber-500/15 flex flex-col gap-2">
         <button
           onClick={onAggiungiProgetto}
-          className="w-full py-2 bg-indigo-600 hover:bg-indigo-500 rounded-lg text-sm font-medium transition-colors cursor-pointer"
+          className="w-full py-2 bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 text-amber-400 rounded-lg text-sm font-medium transition-colors cursor-pointer"
         >
           + Nuovo Progetto
         </button>
         <div className="flex gap-2">
           <button
             onClick={onEsportaJSON}
-            className="flex-1 py-1.5 bg-slate-700 hover:bg-slate-600 rounded-lg text-xs transition-colors cursor-pointer"
+            className="flex-1 py-1.5 bg-[#0d2137] hover:bg-amber-500/10 border border-amber-500/20 text-amber-500/50 hover:text-amber-400 rounded-lg text-xs transition-colors cursor-pointer"
             title="Esporta tutti i progetti in JSON"
           >
             💾 Esporta
           </button>
           <button
             onClick={handleImport}
-            className="flex-1 py-1.5 bg-slate-700 hover:bg-slate-600 rounded-lg text-xs transition-colors cursor-pointer"
+            className="flex-1 py-1.5 bg-[#0d2137] hover:bg-amber-500/10 border border-amber-500/20 text-amber-500/50 hover:text-amber-400 rounded-lg text-xs transition-colors cursor-pointer"
             title="Importa progetti da file JSON"
           >
             📂 Importa
