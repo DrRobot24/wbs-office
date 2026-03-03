@@ -156,7 +156,7 @@ export default function WBSTree({
     if (!treeRef.current) return
     setExporting(true)
     try {
-      // Temporarily expand tree fully and remove clipping for capture
+      // Temporarily remove clipping so html2canvas can see the full tree
       const container = containerRef.current
       const prevOverflow = container.style.overflow
       const prevHeight = container.style.height
@@ -165,97 +165,9 @@ export default function WBSTree({
       container.style.height = 'auto'
       container.style.maxHeight = 'none'
 
-      // ── Convert oklch colors to RGB (html2canvas doesn't support oklch) ──
+      // Mark tree root for identification in cloned DOM
       const tree = treeRef.current
-      const allEls = tree.querySelectorAll('*')
-      const savedInlineStyles = new Map()
-
-      // Helper: get computed style and force inline RGB for problematic properties
-      const colorProps = ['color', 'backgroundColor', 'borderColor', 'borderTopColor', 'borderBottomColor', 'borderLeftColor', 'borderRightColor']
-      allEls.forEach(el => {
-        const computed = getComputedStyle(el)
-        const saved = {}
-        let changed = false
-        colorProps.forEach(prop => {
-          const val = computed[prop]
-          if (val && val.includes('oklch')) {
-            saved[prop] = el.style[prop]
-            // Force browser to resolve to rgb by reading from a temp element
-            el.style[prop] = val
-            changed = true
-          }
-        })
-        if (changed) savedInlineStyles.set(el, saved)
-      })
-
-      // ── Apply print-friendly theme (white bg, dark text) ──
-      // Save tree bg
-      const prevTreeBg = tree.style.backgroundColor
-      tree.style.backgroundColor = '#ffffff'
-
-      const cards = tree.querySelectorAll('.wbs-node-card')
-      const savedCardStyles = []
-      cards.forEach(card => {
-        savedCardStyles.push({
-          bg: card.style.backgroundColor,
-          border: card.style.borderColor,
-        })
-        card.style.backgroundColor = '#f8fafc'
-        card.style.borderColor = '#d97706'
-        card.style.boxShadow = '0 1px 3px rgba(0,0,0,0.1)'
-      })
-
-      // Change ALL text to dark colors for readability on white
-      allEls.forEach(el => {
-        const computed = getComputedStyle(el)
-        const color = computed.color
-        // If text is light-ish (amber, white, light gray on dark bg), make it dark
-        if (color) {
-          const match = color.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/)
-          if (match) {
-            const [, r, g, b] = match.map(Number)
-            const luminance = (r * 0.299 + g * 0.587 + b * 0.114)
-            if (luminance > 120) {
-              // Light text → make dark
-              if (!savedInlineStyles.has(el)) savedInlineStyles.set(el, {})
-              if (!savedInlineStyles.get(el).color) savedInlineStyles.get(el).color = el.style.color
-              // Amber-ish text → dark amber; others → slate
-              if (r > 150 && g > 100 && b < 100) {
-                el.style.color = '#92400e' // amber-800
-              } else {
-                el.style.color = '#1e293b' // slate-800
-              }
-            }
-          }
-        }
-      })
-
-      // Change connector lines to dark
-      const vLines = tree.querySelectorAll('[class*="bg-amber"]')
-      const savedLineBgs = []
-      vLines.forEach(line => {
-        savedLineBgs.push(line.style.backgroundColor)
-        line.style.backgroundColor = '#d97706'
-      })
-
-      // Hide action buttons for cleaner print
-      const actionBtns = tree.querySelectorAll('button')
-      const savedBtnDisplay = []
-      actionBtns.forEach(btn => {
-        savedBtnDisplay.push(btn.style.display)
-        btn.style.display = 'none'
-      })
-
-      // Force all remaining oklch → use a CSS override on the tree root
-      const styleOverride = document.createElement('style')
-      styleOverride.textContent = `
-        .wbs-print-mode, .wbs-print-mode * {
-          --tw-ring-color: #d97706 !important;
-          --tw-shadow-color: transparent !important;
-        }
-      `
-      document.head.appendChild(styleOverride)
-      tree.classList.add('wbs-print-mode')
+      tree.setAttribute('data-print-root', '1')
 
       const canvas = await html2canvas(tree, {
         backgroundColor: '#ffffff',
@@ -263,38 +175,100 @@ export default function WBSTree({
         useCORS: true,
         logging: false,
         onclone: (clonedDoc) => {
-          // In cloned DOM, force-convert any remaining oklch
-          const clonedTree = clonedDoc.querySelector('.wbs-print-mode')
-          if (clonedTree) {
-            clonedTree.querySelectorAll('*').forEach(el => {
-              const s = el.style
-              colorProps.forEach(prop => {
-                if (s[prop] && s[prop].includes('oklch')) {
-                  s[prop] = 'transparent'
+          const win = clonedDoc.defaultView
+          const clonedTree = clonedDoc.querySelector('[data-print-root]')
+          if (!clonedTree || !win) return
+
+          const colorProps = [
+            'color', 'backgroundColor', 'borderColor',
+            'borderTopColor', 'borderBottomColor',
+            'borderLeftColor', 'borderRightColor',
+            'outlineColor', 'textDecorationColor',
+          ]
+
+          // Process ALL elements: replace oklch computed colors with safe RGB
+          const allEls = [clonedTree, ...clonedTree.querySelectorAll('*')]
+          allEls.forEach(el => {
+            const computed = win.getComputedStyle(el)
+
+            colorProps.forEach(prop => {
+              const val = computed[prop]
+              if (val && val.includes('oklch')) {
+                // Map to a reasonable fallback based on property type
+                if (prop === 'backgroundColor') {
+                  el.style[prop] = 'transparent'
+                } else if (prop === 'color') {
+                  el.style[prop] = '#1e293b'
+                } else if (prop.includes('order')) {
+                  el.style[prop] = '#d97706'
+                } else {
+                  el.style[prop] = 'transparent'
                 }
-              })
+              }
             })
-          }
+
+            // Also handle box-shadow which can contain oklch
+            const shadow = computed.boxShadow
+            if (shadow && shadow.includes('oklch')) {
+              el.style.boxShadow = 'none'
+            }
+          })
+
+          // ── Apply print-friendly theme on the clone ──
+          clonedTree.style.backgroundColor = '#ffffff'
+
+          // Style each card
+          clonedTree.querySelectorAll('.wbs-node-card').forEach(card => {
+            card.style.backgroundColor = '#f8fafc'
+            card.style.borderColor = '#d97706'
+            card.style.borderWidth = '2px'
+            card.style.borderStyle = 'solid'
+            card.style.boxShadow = '0 1px 4px rgba(0,0,0,0.1)'
+          })
+
+          // Dark text for readability on white
+          allEls.forEach(el => {
+            const computed = win.getComputedStyle(el)
+            const color = computed.color
+            if (color) {
+              const match = color.match(/rgba?\(\s*(\d+),\s*(\d+),\s*(\d+)/)
+              if (match) {
+                const [, r, g, b] = match.map(Number)
+                const lum = r * 0.299 + g * 0.587 + b * 0.114
+                if (lum > 120) {
+                  // Light text → dark
+                  el.style.color = (r > 150 && g > 100 && b < 100)
+                    ? '#92400e'  // amber-ish → dark amber
+                    : '#1e293b'  // else → slate-800
+                }
+              }
+            }
+          })
+
+          // Dark connectors
+          clonedTree.querySelectorAll('[class*="bg-amber"]').forEach(el => {
+            el.style.backgroundColor = '#d97706'
+          })
+
+          // CSS pseudo-element connectors → inject override
+          const styleTag = clonedDoc.createElement('style')
+          styleTag.textContent = `
+            .wbs-child-wrapper::before,
+            .wbs-child-wrapper::after {
+              background-color: #d97706 !important;
+            }
+          `
+          clonedDoc.head.appendChild(styleTag)
+
+          // Hide action buttons
+          clonedTree.querySelectorAll('button').forEach(btn => {
+            btn.style.display = 'none'
+          })
         },
       })
 
-      // ── Restore original dark theme ──
-      tree.classList.remove('wbs-print-mode')
-      document.head.removeChild(styleOverride)
-      tree.style.backgroundColor = prevTreeBg
-      cards.forEach((card, i) => {
-        card.style.backgroundColor = savedCardStyles[i].bg
-        card.style.borderColor = savedCardStyles[i].border
-        card.style.boxShadow = ''
-      })
-      vLines.forEach((line, i) => { line.style.backgroundColor = savedLineBgs[i] })
-      actionBtns.forEach((btn, i) => { btn.style.display = savedBtnDisplay[i] })
-      // Restore all saved inline styles
-      savedInlineStyles.forEach((saved, el) => {
-        Object.entries(saved).forEach(([prop, val]) => {
-          el.style[prop] = val || ''
-        })
-      })
+      // Restore container (original DOM was never visually changed)
+      tree.removeAttribute('data-print-root')
       container.style.overflow = prevOverflow
       container.style.height = prevHeight
       container.style.maxHeight = prevMaxHeight
