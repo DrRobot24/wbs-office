@@ -17,9 +17,10 @@
 | 🗂️ **Multi-progetto** | Gestione di più progetti con sidebar navigabile |
 | 💾 **Persistenza locale** | Salvataggio automatico su localStorage |
 | 📤 **Export / Import JSON** | Backup e ripristino completo dei progetti |
-| � **Export PDF** | PDF A4 landscape brandizzato con tabella WBS, barra avanzamento e paginazione |
+| 📄 **Export PDF tabellare** | PDF A4 landscape con tabella WBS, barra avanzamento e paginazione |
+| 🌳 **Stampa PDF albero** | Cattura visuale dell'albero WBS come immagine su sfondo bianco |
 | 📗 **Export Excel** | Foglio .xlsx con info progetto e tabella WBS, modificabile liberamente |
-| �🖱️ **Pan panoramico** | Trascina lo sfondo per navigare l'albero WBS |
+| 🖱️ **Pan panoramico** | Trascina lo sfondo per navigare l'albero WBS |
 
 ---
 
@@ -90,7 +91,8 @@ Le percentuali vengono **ricalcolate automaticamente** dal basso verso l'alto:
 - **Tailwind CSS 4** — Utility-first styling
 - **UUID** — Generazione ID univoci
 - **SheetJS (xlsx)** — Generazione file Excel
-- **jsPDF + AutoTable** — Generazione documenti PDF
+- **jsPDF + AutoTable** — Generazione documenti PDF tabellari
+- **html-to-image** — Cattura visuale dell'albero WBS per stampa PDF
 - **localStorage** — Persistenza dati lato client
 
 ---
@@ -105,6 +107,17 @@ Le percentuali vengono **ricalcolate automaticamente** dal basso verso l'alto:
 
 ---
 
-## 📄 Licenza
+## � Salvataggio e sicurezza dati
+
+Tutti i dati vengono salvati **automaticamente** su `localStorage` del browser. Non serve premere "Salva".
+
+- I dati restano finché non si cancella la cache del browser
+- Limite storage: ~5-10 MB (sufficiente per centinaia di progetti)
+- **Backup consigliato**: usa il bottone "Esporta JSON" nella sidebar per salvare una copia esterna
+- Non c'è sincronizzazione tra dispositivi — è pensato per uso su singolo PC
+
+---
+
+## �📄 Licenza
 
 ISC
