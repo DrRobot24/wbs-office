@@ -240,30 +240,16 @@ export default function TaskModal({ task, onSave, onDelete, onClose }) {
                 {errore && <p className="text-red-400 text-xs mt-1">{errore}</p>}
               </div>
 
-              {/* Riga: Responsabile + Priorità */}
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className={labelCls}>Responsabile</label>
-                  <input
-                    type="text"
-                    value={form.responsabile}
-                    onChange={e => handleChange('responsabile', e.target.value)}
-                    className={inputCls}
-                    placeholder="Nome e cognome"
-                  />
-                </div>
-                <div>
-                  <label className={labelCls}>Priorità</label>
-                  <select
-                    value={form.priorita}
-                    onChange={e => handleChange('priorita', e.target.value)}
-                    className={inputCls}
-                  >
-                    {prioritaOptions.map(p => (
-                      <option key={p.value} value={p.value}>{p.label}</option>
-                    ))}
-                  </select>
-                </div>
+              {/* Stakeholder */}
+              <div>
+                <label className={labelCls}>Stakeholder</label>
+                <input
+                  type="text"
+                  value={form.responsabile}
+                  onChange={e => handleChange('responsabile', e.target.value)}
+                  className={inputCls}
+                  placeholder="Nome e cognome"
+                />
               </div>
 
               {/* Riga: Date */}

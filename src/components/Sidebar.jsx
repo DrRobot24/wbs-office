@@ -1,3 +1,5 @@
+import { useAuth } from '../lib/AuthContext'
+
 export default function Sidebar({
   projects,
   activeProjectId,
@@ -7,6 +9,7 @@ export default function Sidebar({
   onEsportaJSON,
   onImportaJSON,
 }) {
+  const { user, profile, cloud, signOut } = useAuth()
   const handleImport = () => {
     const input = document.createElement('input')
     input.type = 'file'
@@ -35,9 +38,37 @@ export default function Sidebar({
 
       {/* Lista progetti */}
       <div className="flex-1 overflow-y-auto py-4">
-        <p className="px-5 text-[10px] text-slate-500 uppercase tracking-widest mb-3 font-semibold">
-          Progetti
-        </p>
+        <div className="px-5 flex items-center justify-between mb-3">
+          <p className="text-[10px] text-slate-500 uppercase tracking-widest font-semibold">
+            Progetti
+          </p>
+          <div className="flex gap-1.5">
+            <button
+              onClick={onEsportaJSON}
+              className="w-6 h-6 flex items-center justify-center rounded-md bg-white/5 hover:bg-white/10 text-slate-500 hover:text-white text-[11px] cursor-pointer transition-all"
+              title="Esporta JSON"
+            >
+              💾
+            </button>
+            <button
+              onClick={handleImport}
+              className="w-6 h-6 flex items-center justify-center rounded-md bg-white/5 hover:bg-white/10 text-slate-500 hover:text-white text-[11px] cursor-pointer transition-all"
+              title="Importa JSON"
+            >
+              📂
+            </button>
+          </div>
+        </div>
+
+        <div className="px-4 mb-3">
+          <button
+            onClick={onAggiungiProgetto}
+            className="w-full py-2.5 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-[#0f1b2e] rounded-lg text-sm font-bold transition-all cursor-pointer shadow-md shadow-amber-500/20 hover:shadow-amber-500/30"
+          >
+            + Nuovo Progetto
+          </button>
+        </div>
+
         {projects.map(p => (
           <div
             key={p.id}
@@ -72,29 +103,47 @@ export default function Sidebar({
         )}
       </div>
 
-      {/* Azioni in basso */}
-      <div className="p-4 border-t border-white/10 flex flex-col gap-2.5">
-        <button
-          onClick={onAggiungiProgetto}
-          className="w-full py-2.5 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-[#0f1b2e] rounded-lg text-sm font-bold transition-all cursor-pointer shadow-md shadow-amber-500/20 hover:shadow-amber-500/30"
-        >
-          + Nuovo Progetto
-        </button>
-        <div className="flex gap-2">
-          <button
-            onClick={onEsportaJSON}
-            className="flex-1 py-2 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 text-slate-300 hover:text-white rounded-lg text-xs font-medium transition-all cursor-pointer"
-            title="Esporta tutti i progetti in JSON"
-          >
-            💾 Esporta
-          </button>
-          <button
-            onClick={handleImport}
-            className="flex-1 py-2 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 text-slate-300 hover:text-white rounded-lg text-xs font-medium transition-all cursor-pointer"
-            title="Importa progetti da file JSON"
-          >
-            📂 Importa
-          </button>
+      {/* Footer — Utente e stato cloud */}
+      <div className="p-4 border-t border-white/10 flex flex-col gap-2">
+        {/* Profilo utente */}
+        {cloud && user && (
+          <div className="flex items-center gap-2.5 py-2 px-3 rounded-lg bg-white/5 border border-white/5">
+            <div className="w-7 h-7 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center shrink-0 text-[10px] font-bold text-[#0f1b2e]">
+              {(profile?.full_name || user.email || '?')[0].toUpperCase()}
+            </div>
+            <div className="flex-1 min-w-0">
+              {profile?.full_name && (
+                <p className="text-xs text-white font-medium truncate leading-tight">{profile.full_name}</p>
+              )}
+              <p className="text-[10px] text-slate-500 truncate leading-tight">{user.email}</p>
+            </div>
+            <button
+              onClick={signOut}
+              className="text-[10px] text-slate-500 hover:text-red-400 cursor-pointer transition-colors shrink-0"
+              title="Disconnetti"
+            >
+              Esci
+            </button>
+          </div>
+        )}
+        {/* Cloud status */}
+        <div className="flex items-center justify-center gap-2 py-1.5 px-3 rounded-lg bg-white/5 border border-white/5">
+          {cloud && user ? (
+            <>
+              <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
+              <span className="text-[10px] text-green-400/70 font-medium flex-1">Cloud sync attivo</span>
+            </>
+          ) : cloud ? (
+            <>
+              <div className="w-2 h-2 rounded-full bg-yellow-400" />
+              <span className="text-[10px] text-yellow-400/70 font-medium">Cloud pronto — login richiesto</span>
+            </>
+          ) : (
+            <>
+              <div className="w-2 h-2 rounded-full bg-slate-500" />
+              <span className="text-[10px] text-slate-500 font-medium">Modalità offline</span>
+            </>
+          )}
         </div>
       </div>
     </aside>

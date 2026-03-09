@@ -1,7 +1,7 @@
 const badgeClassi = {
-  'todo': 'bg-slate-200 text-slate-600',
-  'in-progress': 'bg-amber-100 text-amber-700',
-  'done': 'bg-green-100 text-green-700',
+  'todo': 'bg-red-500/20 text-red-400',
+  'in-progress': 'bg-yellow-500/20 text-yellow-400',
+  'done': 'bg-green-500/20 text-green-400',
 }
 
 const badgeLabels = {

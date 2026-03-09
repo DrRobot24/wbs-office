@@ -2,8 +2,8 @@ import ProgressBar from './ProgressBar'
 import { esportaExcel, esportaPDF } from '../utils/exportWBS'
 
 const badgeClassi = {
-  'todo': 'bg-slate-600/40 text-slate-300',
-  'in-progress': 'bg-amber-500/20 text-amber-400',
+  'todo': 'bg-red-500/20 text-red-400',
+  'in-progress': 'bg-yellow-500/20 text-yellow-400',
   'done': 'bg-green-500/20 text-green-400',
 }
 
@@ -14,8 +14,8 @@ const badgeLabels = {
 }
 
 const statusColors = {
-  'todo': 'border-slate-600/40 bg-slate-800/50',
-  'in-progress': 'border-amber-500/30 bg-amber-500/10',
+  'todo': 'border-red-500/30 bg-red-500/10',
+  'in-progress': 'border-yellow-500/30 bg-yellow-500/10',
   'done': 'border-green-500/30 bg-green-500/10',
 }
 
@@ -82,15 +82,15 @@ function NodoFlusso({ nodo, nodoIndex, isLast }) {
     statoNodo === 'done'
       ? 'border-green-500/50 shadow-green-900/20'
       : statoNodo === 'in-progress'
-        ? 'border-amber-500/50 shadow-amber-900/20'
-        : 'border-slate-600 shadow-slate-900/20'
+        ? 'border-yellow-500/50 shadow-yellow-900/20'
+        : 'border-red-500/50 shadow-red-900/20'
 
   const headerBg =
     statoNodo === 'done'
       ? 'bg-green-500/30'
       : statoNodo === 'in-progress'
-        ? 'bg-amber-500/30'
-        : 'bg-slate-600/30'
+        ? 'bg-yellow-500/30'
+        : 'bg-red-500/30'
 
   return (
     <div className="flex items-start">
@@ -259,11 +259,11 @@ export default function Dashboard({ progetto }) {
         {/* Legenda */}
         <div className="flex items-center gap-6 text-xs text-amber-500/40 justify-center pb-4">
           <div className="flex items-center gap-1.5">
-            <div className="w-3 h-3 rounded-full bg-slate-500" />
+            <div className="w-3 h-3 rounded-full bg-red-500" />
             <span>Da fare</span>
           </div>
           <div className="flex items-center gap-1.5">
-            <div className="w-3 h-3 rounded-full bg-amber-400" />
+            <div className="w-3 h-3 rounded-full bg-yellow-400" />
             <span>In corso</span>
           </div>
           <div className="flex items-center gap-1.5">

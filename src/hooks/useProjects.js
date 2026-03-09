@@ -1,6 +1,7 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { v4 as uuidv4 } from 'uuid'
 import { ricalcolaPercentuali, migraProgetto } from '../utils/calcPercent'
+import { getProvider, isCloudMode } from '../lib/storageProvider'
 
 const STORAGE_KEY = 'wbs-projects'
 
@@ -202,12 +203,12 @@ function creaProgettoDemo() {
 }
 
 function caricaDaStorage() {
+  // Caricamento sincrono iniziale da localStorage (fallback sempre disponibile)
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
     if (raw) {
       const parsed = JSON.parse(raw)
       if (Array.isArray(parsed) && parsed.length > 0) {
-        // Migra eventuali progetti vecchi (fasi/tasks → children)
         return parsed.map(p => ricalcolaPercentuali(migraProgetto(p)))
       }
     }
@@ -218,8 +219,19 @@ function caricaDaStorage() {
   return [demo]
 }
 
+/** Salvataggio locale (sempre attivo come cache) */
 function salvaSuStorage(projects) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(projects))
+}
+
+/** Salvataggio asincrono sul provider attivo (cloud se disponibile) */
+async function syncToProvider(projects) {
+  try {
+    const provider = await getProvider()
+    await provider.saveProjects(projects)
+  } catch (err) {
+    console.warn('[sync] Fallback a localStorage:', err.message)
+  }
 }
 
 export function useProjects() {
@@ -230,8 +242,28 @@ export function useProjects() {
   })
 
   useEffect(() => {
-    salvaSuStorage(projects)
+    salvaSuStorage(projects)    // cache locale sempre aggiornata
+    syncToProvider(projects)    // sync cloud (no-op se non configurato)
   }, [projects])
+
+  // Caricamento asincrono dal cloud al mount (se disponibile)
+  const initialLoad = useRef(false)
+  useEffect(() => {
+    if (initialLoad.current) return
+    initialLoad.current = true
+    ;(async () => {
+      if (!isCloudMode()) return
+      try {
+        const provider = await getProvider()
+        const cloud = await provider.loadProjects()
+        if (cloud && cloud.length > 0) {
+          const migrated = cloud.map(p => ricalcolaPercentuali(migraProgetto(p)))
+          setProjects(migrated)
+          setActiveProjectId(migrated[0].id)
+        }
+      } catch { /* fallback a dati locali già caricati */ }
+    })()
+  }, [])
 
   const activeProject = projects.find(p => p.id === activeProjectId) || null
 

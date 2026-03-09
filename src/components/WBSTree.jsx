@@ -11,6 +11,31 @@ const PRIORITA_COLORI = {
   bassa: 'bg-slate-500/10 text-slate-400 border-slate-500/20',
 }
 
+/* ─── Semaforo: stato ricorsivo del nodo ─── */
+const STATO_BORDER = {
+  'todo': 'border-red-500/70 shadow-red-900/20 hover:border-red-400',
+  'in-progress': 'border-yellow-500/70 shadow-yellow-900/20 hover:border-yellow-400',
+  'done': 'border-green-500/70 shadow-green-900/20 hover:border-green-400',
+}
+const STATO_BADGE = {
+  'todo': 'bg-red-500/20 text-red-400 border-red-500/30',
+  'in-progress': 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30',
+  'done': 'bg-green-500/20 text-green-400 border-green-500/30',
+}
+const STATO_LABEL = { 'todo': 'Da fare', 'in-progress': 'In corso', 'done': 'Completato' }
+
+function calcolaStatoNodo(nodo) {
+  if (!nodo.children || nodo.children.length === 0) return nodo.stato || 'todo'
+  const foglie = raccogliFoglie(nodo)
+  if (foglie.every(f => f.stato === 'done')) return 'done'
+  if (foglie.some(f => f.stato === 'in-progress' || f.stato === 'done')) return 'in-progress'
+  return 'todo'
+}
+function raccogliFoglie(nodo) {
+  if (!nodo.children || nodo.children.length === 0) return [nodo]
+  return nodo.children.flatMap(raccogliFoglie)
+}
+
 /* ─── Recursive Tree Node ─── */
 function TreeNode({ wbsCode, titolo, nodo, onAdd, onEdit, onDelete, onRename, onMoveUp, onMoveDown, onMoveLeft, onMoveRight, onPromote, onDemote, children: childElements }) {
   const [expanded, setExpanded] = useState(true)
@@ -19,6 +44,7 @@ function TreeNode({ wbsCode, titolo, nodo, onAdd, onEdit, onDelete, onRename, on
 
   const childArray = Children.toArray(childElements)
   const hasChildren = childArray.length > 0
+  const statoNodo = nodo ? calcolaStatoNodo(nodo) : 'todo'
 
   const handleSave = () => {
     if (titleTemp.trim() && onRename) {
@@ -32,7 +58,7 @@ function TreeNode({ wbsCode, titolo, nodo, onAdd, onEdit, onDelete, onRename, on
   return (
     <div className="flex flex-col items-center">
       {/* ── Node Card ── */}
-      <div className="wbs-node-card relative border-2 border-amber-500/70 rounded-lg px-5 py-3 min-w-[170px] max-w-[240px] bg-[#0d2137] text-center shadow-lg shadow-amber-900/20 hover:border-amber-400 hover:shadow-amber-800/30 transition-all select-none">
+      <div className={`wbs-node-card relative border-2 rounded-lg px-5 py-3 min-w-[170px] max-w-[240px] bg-[#0d2137] text-center shadow-lg transition-all select-none ${STATO_BORDER[statoNodo] || STATO_BORDER['todo']}`}>
         <div className="text-amber-400 font-bold text-sm">{wbsCode}</div>
 
         {editing ? (
@@ -58,6 +84,15 @@ function TreeNode({ wbsCode, titolo, nodo, onAdd, onEdit, onDelete, onRename, on
             title={onRename ? 'Doppio click per rinominare' : ''}
           >
             {titolo}
+          </div>
+        )}
+
+        {/* Status badge (semaforo) */}
+        {nodo && (
+          <div className="flex justify-center mt-1.5">
+            <span className={`text-[9px] px-2 py-0.5 rounded-full border font-semibold ${STATO_BADGE[statoNodo] || STATO_BADGE['todo']}`}>
+              {statoNodo === 'done' ? '✅' : statoNodo === 'in-progress' ? '🔄' : '⬜'} {STATO_LABEL[statoNodo] || 'Da fare'}
+            </span>
           </div>
         )}
 
@@ -304,24 +339,31 @@ export default function WBSTree({
       saveCss(tree)
       tree.style.cssText += '; background-color: #ffffff !important;'
 
-      // Every node card → remove dark bg class, force white
+      // Every node card → remove dark bg class, force white + semaforo border
       tree.querySelectorAll('.wbs-node-card').forEach(card => {
         saveClass(card)
         saveCss(card)
+
+        // Detect semaforo status from border classes
+        const cls = card.className || ''
+        let borderColor = '#92400e' // fallback amber
+        if (cls.includes('border-red-'))    borderColor = '#ef4444'  // rosso
+        else if (cls.includes('border-yellow-')) borderColor = '#eab308'  // giallo
+        else if (cls.includes('border-green-'))  borderColor = '#22c55e'  // verde
+
         // Remove all dark background/shadow/text classes
         card.className = card.className
           .replace(/bg-\[#[0-9a-fA-F]+\]/g, '')
-          .replace(/shadow-amber-[^\s]*/g, '')
+          .replace(/shadow-[a-z]+-[^\s]*/g, '')
           .replace(/shadow-lg/g, '')
           .replace(/hover:[^\s]*/g, '')
           .replace(/transition-all/g, '')
-        card.style.cssText += '; background-color: #ffffff !important; border-color: #92400e !important; box-shadow: 0 1px 4px rgba(0,0,0,0.15) !important;'
+        card.style.cssText += `; background-color: #ffffff !important; border-color: ${borderColor} !important; box-shadow: 0 1px 4px rgba(0,0,0,0.15) !important;`
 
         // All child elements: force dark text, remove dark text classes
         card.querySelectorAll('*').forEach(child => {
           if (child.tagName === 'BUTTON') return
           saveCss(child)
-          // Only modify className on HTML elements (not SVG which has SVGAnimatedString)
           if (typeof child.className === 'string') {
             saveClass(child)
             child.className = child.className
@@ -337,9 +379,18 @@ export default function WBSTree({
         if (directDivs[0]) directDivs[0].style.cssText += '; color: #92400e !important; font-weight: bold !important;'
         if (directDivs[1]) directDivs[1].style.cssText += '; color: #334155 !important;'
 
-        // Badge spans
+        // Badge spans — semaforo status badges keep their color, others neutral
         card.querySelectorAll('span').forEach(sp => {
-          sp.style.cssText += '; background-color: #f1f5f9 !important; border-color: #94a3b8 !important; color: #334155 !important;'
+          const spCls = sp.className || ''
+          if (spCls.includes('text-red-400')) {
+            sp.style.cssText += '; background-color: #fef2f2 !important; border-color: #ef4444 !important; color: #dc2626 !important;'
+          } else if (spCls.includes('text-yellow-400')) {
+            sp.style.cssText += '; background-color: #fefce8 !important; border-color: #eab308 !important; color: #ca8a04 !important;'
+          } else if (spCls.includes('text-green-400')) {
+            sp.style.cssText += '; background-color: #f0fdf4 !important; border-color: #22c55e !important; color: #16a34a !important;'
+          } else {
+            sp.style.cssText += '; background-color: #f1f5f9 !important; border-color: #94a3b8 !important; color: #334155 !important;'
+          }
         })
 
         // Force the card itself back to white (after children were set to transparent)

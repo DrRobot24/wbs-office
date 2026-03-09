@@ -2,9 +2,32 @@ import { useState } from 'react'
 import Sidebar from './components/Sidebar'
 import WBSTree from './components/WBSTree'
 import Dashboard from './components/Dashboard'
+import CostiManagement from './components/CostiManagement'
+import GanttChart from './components/GanttChart'
+import LoginPage from './components/LoginPage'
 import { useProjects } from './hooks/useProjects'
+import { useAuth } from './lib/AuthContext'
 
 export default function App() {
+  const { user, loading, cloud } = useAuth()
+
+  // Se Supabase è configurato e non c'è utente → mostra login
+  if (cloud && !user) {
+    if (loading) {
+      return (
+        <div className="min-h-screen flex items-center justify-center bg-[#0a1929]">
+          <div className="text-center">
+            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center mx-auto mb-4 animate-pulse">
+              <span className="text-[#0f1b2e] font-extrabold text-lg">RS</span>
+            </div>
+            <p className="text-amber-400/60 text-sm">Caricamento...</p>
+          </div>
+        </div>
+      )
+    }
+    return <LoginPage />
+  }
+
   const {
     projects,
     activeProject,
@@ -25,7 +48,7 @@ export default function App() {
     importaJSON,
   } = useProjects()
 
-  const [vista, setVista] = useState('dashboard') // 'dashboard' | 'wbs'
+  const [vista, setVista] = useState('dashboard') // 'dashboard' | 'wbs' | 'costi' | 'gantt'
   const progettoIndex = projects.findIndex(p => p.id === activeProjectId)
 
   return (
@@ -66,11 +89,35 @@ export default function App() {
             >
               🌳 Albero WBS
             </button>
+            <button
+              onClick={() => setVista('costi')}
+              className={`px-4 py-2.5 text-sm font-medium rounded-t-lg transition-colors cursor-pointer ${
+                vista === 'costi'
+                  ? 'bg-[#0a1929] text-amber-400 border border-amber-500/30 border-b-[#0a1929] -mb-px'
+                  : 'text-amber-500/40 hover:text-amber-400'
+              }`}
+            >
+              💰 Costi
+            </button>
+            <button
+              onClick={() => setVista('gantt')}
+              className={`px-4 py-2.5 text-sm font-medium rounded-t-lg transition-colors cursor-pointer ${
+                vista === 'gantt'
+                  ? 'bg-[#0a1929] text-amber-400 border border-amber-500/30 border-b-[#0a1929] -mb-px'
+                  : 'text-amber-500/40 hover:text-amber-400'
+              }`}
+            >
+              📅 Cronoprogramma
+            </button>
           </div>
 
           {/* Vista attiva */}
           {vista === 'dashboard' ? (
             <Dashboard progetto={activeProject} />
+          ) : vista === 'costi' ? (
+            <CostiManagement progetto={activeProject} />
+          ) : vista === 'gantt' ? (
+            <GanttChart progetto={activeProject} />
           ) : (
             <WBSTree
               progetto={activeProject}

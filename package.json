@@ -12,6 +12,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@supabase/supabase-js": "^2.99.0",
     "html-to-image": "^1.11.13",
     "jspdf": "^4.2.0",
     "jspdf-autotable": "^5.0.7",
