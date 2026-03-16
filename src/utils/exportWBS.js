@@ -96,9 +96,9 @@ export function esportaExcel(progetto) {
   const wb = XLSX.utils.book_new()
 
   // ── Foglio 1: WBS Principale ──
-  const header1 = ['Codice WBS', 'Titolo', 'Liv.', 'Responsabile', 'Priorità', 'Data Inizio', 'Scadenza', 'Stato', '%', 'Costo Prev.', 'Costo Mat.', 'Note']
+  const header1 = ['Codice WBS', 'Titolo', 'Liv.', 'Responsabile', 'Data Inizio', 'Scadenza', 'Stato', '%', 'Costo Prev.', 'Costo Mat.', 'Note']
   const data1 = rows.map(r => [
-    r.codice, r.titolo, r.livello, r.responsabile, r.priorita,
+    r.codice, r.titolo, r.livello, r.responsabile,
     r.dataInizio, r.scadenza, r.stato, r.percentuale,
     r.costoTotale, r.costoMateriali, r.note,
   ])
@@ -150,12 +150,12 @@ export function esportaPDF(progetto) {
   const pageW = doc.internal.pageSize.getWidth()
 
   // ── Header ──
-  doc.setFillColor(15, 27, 46) // #0f1b2e
+  doc.setFillColor(249, 250, 251)
   doc.rect(0, 0, pageW, 32, 'F')
 
   doc.setFont('helvetica', 'bold')
   doc.setFontSize(18)
-  doc.setTextColor(245, 158, 11) // amber
+  doc.setTextColor(30, 30, 30)
   doc.text('WBS Office', 14, 16)
 
   doc.setFontSize(10)
@@ -191,14 +191,13 @@ export function esportaPDF(progetto) {
   // ── Table ──
   const tableY = barY + 12
 
-  const tableHead = [['WBS', 'Titolo', 'Liv.', 'Responsabile', 'Priorità', 'Scadenza', 'Stato', '%', 'Costo']]
+  const tableHead = [['WBS', 'Titolo', 'Liv.', 'Responsabile', 'Scadenza', 'Stato', '%', 'Costo']]
 
   const tableBody = rows.map(r => [
     r.codice,
     r.titolo,
     r.livello,
     r.responsabile,
-    r.priorita,
     r.scadenza,
     r.stato,
     r.percentuale,
@@ -218,8 +217,8 @@ export function esportaPDF(progetto) {
       lineWidth: 0.3,
     },
     headStyles: {
-      fillColor: [15, 27, 46],
-      textColor: [245, 158, 11],
+      fillColor: [243, 244, 246],
+      textColor: [30, 30, 30],
       fontStyle: 'bold',
       fontSize: 8,
     },
@@ -228,14 +227,13 @@ export function esportaPDF(progetto) {
     },
     columnStyles: {
       0: { cellWidth: 16, halign: 'center', fontStyle: 'bold' },
-      1: { cellWidth: 50 },
+      1: { cellWidth: 55 },
       2: { cellWidth: 8, halign: 'center' },
-      3: { cellWidth: 28 },
-      4: { cellWidth: 16, halign: 'center' },
-      5: { cellWidth: 22, halign: 'center' },
-      6: { cellWidth: 18, halign: 'center' },
-      7: { cellWidth: 12, halign: 'center', fontStyle: 'bold' },
-      8: { cellWidth: 18, halign: 'right' },
+      3: { cellWidth: 30 },
+      4: { cellWidth: 22, halign: 'center' },
+      5: { cellWidth: 18, halign: 'center' },
+      6: { cellWidth: 12, halign: 'center', fontStyle: 'bold' },
+      7: { cellWidth: 18, halign: 'right' },
     },
     didParseCell(data) {
       if (data.section === 'body') {
@@ -245,7 +243,7 @@ export function esportaPDF(progetto) {
           data.cell.styles.fontStyle = 'bold'
         }
         // Color status
-        if (data.column.index === 6) {
+        if (data.column.index === 5) {
           const stato = data.cell.raw
           if (stato === 'Completato') {
             data.cell.styles.textColor = [22, 163, 74]
@@ -253,16 +251,6 @@ export function esportaPDF(progetto) {
           } else if (stato === 'In corso') {
             data.cell.styles.textColor = [217, 119, 6]
             data.cell.styles.fontStyle = 'bold'
-          }
-        }
-        // Color priority
-        if (data.column.index === 4) {
-          const pri = data.cell.raw
-          if (pri === 'Urgente') {
-            data.cell.styles.textColor = [220, 38, 38]
-            data.cell.styles.fontStyle = 'bold'
-          } else if (pri === 'Alta') {
-            data.cell.styles.textColor = [234, 88, 12]
           }
         }
       }

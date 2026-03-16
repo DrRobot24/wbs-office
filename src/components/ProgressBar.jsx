@@ -9,7 +9,7 @@ export default function ProgressBar({ percentuale = 0, altezza = 'h-3' }) {
           : 'bg-slate-600'
 
   return (
-    <div className={`w-full bg-slate-700/50 rounded-full ${altezza} overflow-hidden`}>
+    <div className={`w-full bg-gray-200 rounded-full ${altezza} overflow-hidden`}>
       <div
         className={`${colore} ${altezza} rounded-full transition-all duration-300`}
         style={{ width: `${Math.min(percentuale, 100)}%` }}

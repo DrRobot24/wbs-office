@@ -16,27 +16,27 @@ const prioritaOptions = [
 /* ─── Componente riga materiale ─── */
 function MaterialeRow({ mat, index, onChange, onRemove }) {
   return (
-    <div className="flex items-start gap-2 bg-[#091a2a] rounded-lg p-2.5 border border-amber-500/10">
+    <div className="flex items-start gap-2 bg-gray-50 rounded-lg p-2.5 border border-gray-200">
       <div className="flex-1 grid grid-cols-2 gap-2">
         <input
           type="text"
           value={mat.descrizione}
           onChange={e => onChange(index, 'descrizione', e.target.value)}
-          className="bg-[#0a1628] border border-amber-500/20 rounded px-2 py-1.5 text-xs text-amber-300 focus:outline-none focus:ring-1 focus:ring-amber-400/50 col-span-2"
+          className="bg-gray-50 border border-gray-300 rounded px-2 py-1.5 text-xs text-gray-700 focus:outline-none focus:ring-1 focus:ring-amber-500/50 col-span-2"
           placeholder="Materiale / Articolo"
         />
         <input
           type="text"
           value={mat.quantita}
           onChange={e => onChange(index, 'quantita', e.target.value)}
-          className="bg-[#0a1628] border border-amber-500/20 rounded px-2 py-1.5 text-xs text-amber-300 focus:outline-none focus:ring-1 focus:ring-amber-400/50"
+          className="bg-gray-50 border border-gray-300 rounded px-2 py-1.5 text-xs text-gray-700 focus:outline-none focus:ring-1 focus:ring-amber-500/50"
           placeholder="Qtà (es: 50 mq)"
         />
         <input
           type="text"
           value={mat.fornitore}
           onChange={e => onChange(index, 'fornitore', e.target.value)}
-          className="bg-[#0a1628] border border-amber-500/20 rounded px-2 py-1.5 text-xs text-amber-300 focus:outline-none focus:ring-1 focus:ring-amber-400/50"
+          className="bg-gray-50 border border-gray-300 rounded px-2 py-1.5 text-xs text-gray-700 focus:outline-none focus:ring-1 focus:ring-amber-500/50"
           placeholder="Fornitore"
         />
         <input
@@ -44,13 +44,13 @@ function MaterialeRow({ mat, index, onChange, onRemove }) {
           step="0.01"
           value={mat.costo}
           onChange={e => onChange(index, 'costo', e.target.value)}
-          className="bg-[#0a1628] border border-amber-500/20 rounded px-2 py-1.5 text-xs text-amber-300 focus:outline-none focus:ring-1 focus:ring-amber-400/50"
+          className="bg-gray-50 border border-gray-300 rounded px-2 py-1.5 text-xs text-gray-700 focus:outline-none focus:ring-1 focus:ring-amber-500/50"
           placeholder="Costo €"
         />
         <select
           value={mat.statoOrdine || 'da-ordinare'}
           onChange={e => onChange(index, 'statoOrdine', e.target.value)}
-          className="bg-[#0a1628] border border-amber-500/20 rounded px-2 py-1.5 text-xs text-amber-300 focus:outline-none focus:ring-1 focus:ring-amber-400/50"
+          className="bg-gray-50 border border-gray-300 rounded px-2 py-1.5 text-xs text-gray-700 focus:outline-none focus:ring-1 focus:ring-amber-500/50"
         >
           <option value="da-ordinare">Da ordinare</option>
           <option value="ordinato">Ordinato</option>
@@ -71,10 +71,10 @@ function MaterialeRow({ mat, index, onChange, onRemove }) {
 function Sezione({ titolo, icona, children, defaultOpen = true }) {
   const [aperta, setAperta] = useState(defaultOpen)
   return (
-    <div className="border border-amber-500/15 rounded-lg overflow-hidden">
+    <div className="border border-gray-300 rounded-lg overflow-hidden">
       <button
         onClick={() => setAperta(!aperta)}
-        className="w-full flex items-center gap-2 px-3 py-2 bg-[#091a2a] hover:bg-[#0a1e30] text-amber-300/80 text-xs font-semibold cursor-pointer transition-colors"
+        className="w-full flex items-center gap-2 px-3 py-2 bg-gray-50 hover:bg-gray-100 text-gray-600 text-xs font-semibold cursor-pointer transition-colors"
       >
         <span>{icona}</span>
         <span className="flex-1 text-left">{titolo}</span>
@@ -88,8 +88,8 @@ function Sezione({ titolo, icona, children, defaultOpen = true }) {
 }
 
 /* ─── Input con label ─── */
-const inputCls = "w-full bg-[#0a1628] border border-amber-500/30 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-amber-400/50 text-sm text-amber-300"
-const labelCls = "block mb-1 text-xs font-medium text-amber-300/60"
+const inputCls = "w-full bg-gray-50 border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-amber-500/50 text-sm text-gray-700"
+const labelCls = "block mb-1 text-xs font-medium text-gray-500"
 
 export default function TaskModal({ task, onSave, onDelete, onClose }) {
   const isEdit = !!task?.id
@@ -180,35 +180,35 @@ export default function TaskModal({ task, onSave, onDelete, onClose }) {
   const tabCls = (t) =>
     `px-3 py-1.5 text-xs font-medium rounded-t-lg cursor-pointer transition-colors ${
       tab === t
-        ? 'bg-[#0d2137] text-amber-400 border border-amber-500/30 border-b-[#0d2137] -mb-px'
-        : 'text-amber-500/40 hover:text-amber-400'
+        ? 'bg-white text-amber-600 border border-gray-300 border-b-white -mb-px'
+        : 'text-gray-400 hover:text-amber-600'
     }`
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60" onClick={onClose}>
       <div
-        className="bg-[#0d2137] border border-amber-500/30 rounded-xl shadow-2xl shadow-amber-900/20 w-full max-w-lg mx-4 flex flex-col max-h-[90vh]"
+        className="bg-white border border-gray-300 rounded-xl shadow-xl w-full max-w-lg mx-4 flex flex-col max-h-[90vh]"
         onClick={e => e.stopPropagation()}
       >
         {/* ── Header ── */}
-        <div className="px-5 pt-5 pb-3 border-b border-amber-500/15">
-          <h2 className="text-lg font-bold text-amber-400">
+        <div className="px-5 pt-5 pb-3 border-b border-gray-300">
+          <h2 className="text-lg font-bold text-amber-600">
             {isEdit ? '✏️ Modifica Elemento' : '➕ Nuovo Elemento'}
           </h2>
-          <p className="text-[11px] text-amber-500/40 mt-0.5">
+          <p className="text-[11px] text-gray-400 mt-0.5">
             Compila le informazioni per questa voce della WBS
           </p>
         </div>
 
         {/* ── Tabs ── */}
-        <div className="shrink-0 bg-[#091a2a] px-5 flex gap-1 pt-2 border-b border-amber-500/10">
+        <div className="shrink-0 bg-gray-50 px-5 flex gap-1 pt-2 border-b border-gray-200">
           <button className={tabCls('generale')} onClick={() => setTab('generale')}>
             📋 Generale
           </button>
           <button className={tabCls('materiali')} onClick={() => setTab('materiali')}>
             📦 Materiali & Costi
             {form.materiali.length > 0 && (
-              <span className="ml-1.5 bg-amber-500/20 text-amber-400 text-[10px] font-bold px-1.5 py-0.5 rounded-full">
+              <span className="ml-1.5 bg-amber-100 text-amber-700 text-[10px] font-bold px-1.5 py-0.5 rounded-full">
                 {form.materiali.length}
               </span>
             )}
@@ -299,7 +299,7 @@ export default function TaskModal({ task, onSave, onDelete, onClose }) {
                       onChange={e => handleChange('percentuale', Number(e.target.value))}
                       className="flex-1 h-2 accent-amber-400"
                     />
-                    <span className="text-amber-400 text-sm font-bold w-10 text-right">{form.percentuale}%</span>
+                    <span className="text-amber-600 text-sm font-bold w-10 text-right">{form.percentuale}%</span>
                   </div>
                 </div>
               </div>
@@ -323,9 +323,9 @@ export default function TaskModal({ task, onSave, onDelete, onClose }) {
                   />
                 </div>
                 {form.materiali.length > 0 && (
-                  <div className="flex items-center justify-between bg-[#091a2a] rounded-lg px-3 py-2 border border-amber-500/10">
-                    <span className="text-xs text-amber-500/50">Totale materiali inseriti:</span>
-                    <span className="text-sm font-bold text-amber-400">
+                  <div className="flex items-center justify-between bg-gray-50 rounded-lg px-3 py-2 border border-gray-200">
+                    <span className="text-xs text-gray-400">Totale materiali inseriti:</span>
+                    <span className="text-sm font-bold text-amber-600">
                       € {costoMateriali.toLocaleString('it-IT', { minimumFractionDigits: 2 })}
                     </span>
                   </div>
@@ -336,7 +336,7 @@ export default function TaskModal({ task, onSave, onDelete, onClose }) {
               <Sezione titolo={`Materiali da ordinare (${form.materiali.length})`} icona="📦" defaultOpen={true}>
                 <div className="space-y-2">
                   {form.materiali.length === 0 && (
-                    <p className="text-xs text-amber-500/30 italic py-2 text-center">
+                    <p className="text-xs text-gray-400 italic py-2 text-center">
                       Nessun materiale aggiunto
                     </p>
                   )}
@@ -352,7 +352,7 @@ export default function TaskModal({ task, onSave, onDelete, onClose }) {
                 </div>
                 <button
                   onClick={aggiungiMateriale}
-                  className="w-full py-2 text-xs font-semibold text-amber-400 bg-amber-500/10 hover:bg-amber-500/20 border border-dashed border-amber-500/30 rounded-lg cursor-pointer transition-colors"
+                  className="w-full py-2 text-xs font-semibold text-amber-600 bg-amber-500/10 hover:bg-amber-500/20 border border-dashed border-gray-300 rounded-lg cursor-pointer transition-colors"
                 >
                   + Aggiungi materiale
                 </button>
@@ -371,7 +371,7 @@ export default function TaskModal({ task, onSave, onDelete, onClose }) {
                   className={`${inputCls} min-h-[200px] resize-y`}
                   placeholder={"Appunti, promemoria, specifiche tecniche, riferimenti normativi...\n\nEs:\n- Verificare conformità normativa impianti\n- Contattare geom. Rossi per rilievi\n- Attesa conferma preventivo fornitore XY"}
                 />
-                <p className="text-[10px] text-amber-500/25 mt-1 text-right">
+                <p className="text-[10px] text-gray-300 mt-1 text-right">
                   {form.note.length} caratteri
                 </p>
               </div>
@@ -380,7 +380,7 @@ export default function TaskModal({ task, onSave, onDelete, onClose }) {
         </div>
 
         {/* ── Footer ── */}
-        <div className="shrink-0 px-5 py-3 border-t border-amber-500/15 flex items-center justify-between bg-[#091a2a] rounded-b-xl">
+        <div className="shrink-0 px-5 py-3 border-t border-gray-300 flex items-center justify-between bg-gray-50 rounded-b-xl">
           <div>
             {isEdit && (
               <button
@@ -394,13 +394,13 @@ export default function TaskModal({ task, onSave, onDelete, onClose }) {
           <div className="flex gap-2">
             <button
               onClick={onClose}
-              className="px-4 py-2 text-sm rounded-lg bg-slate-700/50 hover:bg-slate-700 text-amber-500/50 hover:text-amber-400 border border-amber-500/20 cursor-pointer"
+              className="px-4 py-2 text-sm rounded-lg bg-gray-200 hover:bg-gray-300 text-gray-400 hover:text-amber-600 border border-gray-300 cursor-pointer"
             >
               Annulla
             </button>
             <button
               onClick={handleSave}
-              className="px-5 py-2 text-sm rounded-lg bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/50 text-amber-400 font-semibold cursor-pointer"
+              className="px-5 py-2 text-sm rounded-lg bg-amber-500/20 hover:bg-amber-500/30 border border-gray-1000 text-amber-600 font-semibold cursor-pointer"
             >
               💾 Salva
             </button>

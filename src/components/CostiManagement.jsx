@@ -68,55 +68,55 @@ export default function CostiManagement({ progetto }) {
   }, {})
 
   return (
-    <div className="flex-1 overflow-y-auto bg-[#0a1929]">
+    <div className="flex-1 overflow-y-auto bg-gray-50">
       {/* Header */}
-      <div className="bg-[#0d2137] border-b border-amber-500/20 px-6 py-5">
+      <div className="bg-white border-b border-gray-300 px-6 py-5">
         <div className="flex items-center gap-3 mb-1">
           <span className="text-2xl">💰</span>
-          <h1 className="text-xl font-bold text-amber-400">{progetto.titolo}</h1>
+          <h1 className="text-xl font-bold text-amber-600">{progetto.titolo}</h1>
         </div>
-        <p className="text-sm text-amber-500/40 ml-10">Gestione Costi &amp; Materiali</p>
+        <p className="text-sm text-gray-400 ml-10">Gestione Costi &amp; Materiali</p>
       </div>
 
       <div className="p-6 space-y-6">
         {/* ── Riepilogo globale ── */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {/* Budget previsto */}
-          <div className="bg-[#0d2137] rounded-xl border border-amber-500/20 p-5 shadow-lg shadow-amber-900/10">
+          <div className="bg-white rounded-xl border border-gray-300 p-5 shadow-sm">
             <div className="flex items-center gap-2 mb-1">
               <span className="text-lg">📋</span>
-              <span className="text-xs text-amber-500/50 font-semibold uppercase tracking-wide">Budget Previsto</span>
+              <span className="text-xs text-gray-400 font-semibold uppercase tracking-wide">Budget Previsto</span>
             </div>
-            <p className="text-2xl font-bold text-amber-400">
+            <p className="text-2xl font-bold text-amber-600">
               € {fmt(costoTotaleProgetto)}
             </p>
-            <p className="text-[11px] text-amber-500/30 mt-1">
+            <p className="text-[11px] text-gray-400 mt-1">
               Somma di tutte le voci con costo assegnato
             </p>
           </div>
 
           {/* Costo materiali */}
-          <div className="bg-[#0d2137] rounded-xl border border-amber-500/20 p-5 shadow-lg shadow-amber-900/10">
+          <div className="bg-white rounded-xl border border-gray-300 p-5 shadow-sm">
             <div className="flex items-center gap-2 mb-1">
               <span className="text-lg">📦</span>
-              <span className="text-xs text-amber-500/50 font-semibold uppercase tracking-wide">Totale Materiali</span>
+              <span className="text-xs text-gray-400 font-semibold uppercase tracking-wide">Totale Materiali</span>
             </div>
-            <p className="text-2xl font-bold text-amber-400">
+            <p className="text-2xl font-bold text-amber-600">
               € {fmt(totaleMateriali)}
             </p>
-            <p className="text-[11px] text-amber-500/30 mt-1">
+            <p className="text-[11px] text-gray-400 mt-1">
               {tuttiMateriali.length} {tuttiMateriali.length === 1 ? 'materiale' : 'materiali'} inseriti
             </p>
           </div>
 
           {/* Stato ordini */}
-          <div className="bg-[#0d2137] rounded-xl border border-amber-500/20 p-5 shadow-lg shadow-amber-900/10">
+          <div className="bg-white rounded-xl border border-gray-300 p-5 shadow-sm">
             <div className="flex items-center gap-2 mb-2">
               <span className="text-lg">🚚</span>
-              <span className="text-xs text-amber-500/50 font-semibold uppercase tracking-wide">Stato Ordini</span>
+              <span className="text-xs text-gray-400 font-semibold uppercase tracking-wide">Stato Ordini</span>
             </div>
             {tuttiMateriali.length === 0 ? (
-              <p className="text-xs text-amber-500/30 italic">Nessun materiale</p>
+              <p className="text-xs text-gray-400 italic">Nessun materiale</p>
             ) : (
               <div className="flex flex-wrap gap-2">
                 {Object.entries(statsMateriali).map(([stato, count]) => (
@@ -130,20 +130,20 @@ export default function CostiManagement({ progetto }) {
         </div>
 
         {/* ── Dettaglio per voce ── */}
-        <div className="bg-[#0d2137] rounded-xl border border-amber-500/20 shadow-lg shadow-amber-900/10">
-          <div className="px-5 py-4 border-b border-amber-500/10">
-            <h2 className="text-sm font-semibold text-amber-300">
+        <div className="bg-white rounded-xl border border-gray-300 shadow-sm">
+          <div className="px-5 py-4 border-b border-gray-200">
+            <h2 className="text-sm font-semibold text-gray-700">
               Dettaglio Costi per Voce — {nodi.length} {nodi.length === 1 ? 'voce' : 'voci'} con dati economici
             </h2>
           </div>
 
           {nodi.length === 0 ? (
-            <div className="text-center py-12 text-amber-500/30">
+            <div className="text-center py-12 text-gray-400">
               <p className="text-lg mb-2">Nessun costo registrato</p>
               <p className="text-sm">Apri un elemento dall'Albero WBS e compila il tab "Materiali &amp; Costi"</p>
             </div>
           ) : (
-            <div className="divide-y divide-amber-500/10">
+            <div className="divide-y divide-gray-200">
               {nodi.map(nodo => {
                 const costoMat = nodo.materiali.reduce((a, m) => a + (parseFloat(m.costo) || 0), 0)
                 return (
@@ -151,8 +151,8 @@ export default function CostiManagement({ progetto }) {
                     {/* Header voce */}
                     <div className="flex items-center gap-3 mb-3">
                       <div className="flex-1">
-                        <h3 className="text-sm font-semibold text-amber-300">{nodo.titolo}</h3>
-                        <p className="text-[11px] text-amber-500/30 mt-0.5">
+                        <h3 className="text-sm font-semibold text-gray-700">{nodo.titolo}</h3>
+                        <p className="text-[11px] text-gray-400 mt-0.5">
                           {nodo.percorso.slice(0, -1).join(' › ')}
                         </p>
                       </div>
@@ -160,26 +160,26 @@ export default function CostiManagement({ progetto }) {
                         {STATO_LABEL[nodo.stato] || 'Da fare'}
                       </span>
                       <div className="text-right">
-                        <p className="text-xs text-amber-500/50">Budget</p>
-                        <p className="text-sm font-bold text-amber-400">€ {fmt(nodo.costoTotale)}</p>
+                        <p className="text-xs text-gray-400">Budget</p>
+                        <p className="text-sm font-bold text-amber-600">€ {fmt(nodo.costoTotale)}</p>
                       </div>
                     </div>
 
                     {/* Progress */}
                     <div className="mb-3">
                       <div className="flex items-center justify-between mb-1">
-                        <span className="text-[11px] text-amber-500/40">Avanzamento</span>
-                        <span className="text-[11px] font-bold text-amber-400">{nodo.percentuale}%</span>
+                        <span className="text-[11px] text-gray-400">Avanzamento</span>
+                        <span className="text-[11px] font-bold text-amber-600">{nodo.percentuale}%</span>
                       </div>
                       <ProgressBar percentuale={nodo.percentuale} altezza="h-1.5" />
                     </div>
 
                     {/* Materiali */}
                     {nodo.materiali.length > 0 && (
-                      <div className="bg-[#091a2a] rounded-lg border border-amber-500/10 overflow-hidden">
+                      <div className="bg-gray-50 rounded-lg border border-gray-200 overflow-hidden">
                         <table className="w-full text-xs">
                           <thead>
-                            <tr className="text-amber-500/40 border-b border-amber-500/10">
+                            <tr className="text-gray-400 border-b border-gray-200">
                               <th className="text-left px-3 py-2 font-medium">Materiale</th>
                               <th className="text-left px-3 py-2 font-medium">Qtà</th>
                               <th className="text-left px-3 py-2 font-medium">Fornitore</th>
@@ -187,13 +187,13 @@ export default function CostiManagement({ progetto }) {
                               <th className="text-center px-3 py-2 font-medium">Stato</th>
                             </tr>
                           </thead>
-                          <tbody className="divide-y divide-amber-500/5">
+                          <tbody className="divide-y divide-gray-100">
                             {nodo.materiali.map((mat, i) => (
-                              <tr key={i} className="text-amber-300/70">
+                              <tr key={i} className="text-gray-600">
                                 <td className="px-3 py-2">{mat.descrizione || '—'}</td>
                                 <td className="px-3 py-2">{mat.quantita || '—'}</td>
                                 <td className="px-3 py-2">{mat.fornitore || '—'}</td>
-                                <td className="px-3 py-2 text-right font-medium text-amber-400">
+                                <td className="px-3 py-2 text-right font-medium text-amber-600">
                                   {mat.costo ? `€ ${fmt(mat.costo)}` : '—'}
                                 </td>
                                 <td className="px-3 py-2 text-center">
@@ -206,9 +206,9 @@ export default function CostiManagement({ progetto }) {
                           </tbody>
                           {nodo.materiali.length > 1 && (
                             <tfoot>
-                              <tr className="border-t border-amber-500/15">
-                                <td colSpan={3} className="px-3 py-2 text-amber-500/40 font-medium">Subtotale materiali</td>
-                                <td className="px-3 py-2 text-right font-bold text-amber-400">€ {fmt(costoMat)}</td>
+                              <tr className="border-t border-gray-300">
+                                <td colSpan={3} className="px-3 py-2 text-gray-400 font-medium">Subtotale materiali</td>
+                                <td className="px-3 py-2 text-right font-bold text-amber-600">€ {fmt(costoMat)}</td>
                                 <td />
                               </tr>
                             </tfoot>
@@ -224,11 +224,11 @@ export default function CostiManagement({ progetto }) {
 
           {/* Footer totale */}
           {nodi.length > 0 && (
-            <div className="px-5 py-4 border-t border-amber-500/20 bg-[#091a2a] rounded-b-xl flex items-center justify-between">
-              <span className="text-sm font-semibold text-amber-300">Totale Generale</span>
+            <div className="px-5 py-4 border-t border-gray-300 bg-gray-50 rounded-b-xl flex items-center justify-between">
+              <span className="text-sm font-semibold text-gray-700">Totale Generale</span>
               <div className="text-right">
-                <p className="text-xs text-amber-500/40">Budget previsto: <span className="font-bold text-amber-400">€ {fmt(costoTotaleProgetto)}</span></p>
-                <p className="text-xs text-amber-500/40">Materiali: <span className="font-bold text-amber-400">€ {fmt(totaleMateriali)}</span></p>
+                <p className="text-xs text-gray-400">Budget previsto: <span className="font-bold text-amber-600">€ {fmt(costoTotaleProgetto)}</span></p>
+                <p className="text-xs text-gray-400">Materiali: <span className="font-bold text-amber-600">€ {fmt(totaleMateriali)}</span></p>
               </div>
             </div>
           )}

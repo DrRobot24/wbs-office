@@ -49,7 +49,7 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex bg-[#0a1929] overflow-hidden">
+    <div className="min-h-screen flex bg-gray-50 overflow-hidden">
       {/* ═══ Lato sinistro — Hero / Immagine ═══ */}
       <div className="hidden lg:flex lg:w-[55%] relative">
         {/* Immagine di sfondo — cantiere / progetto */}
@@ -60,8 +60,8 @@ export default function LoginPage() {
           }}
         />
         {/* Overlay scuro con gradiente */}
-        <div className="absolute inset-0 bg-gradient-to-r from-[#0a1929] via-[#0a1929]/70 to-[#0a1929]/40" />
-        <div className="absolute inset-0 bg-gradient-to-t from-[#0a1929] via-transparent to-[#0a1929]/30" />
+        <div className="absolute inset-0 bg-gradient-to-r from-gray-50 via-white/70 to-white/40" />
+        <div className="absolute inset-0 bg-gradient-to-t from-gray-50 via-transparent to-white/30" />
 
         {/* Contenuto Hero */}
         <div className="relative z-10 flex flex-col justify-center px-16 py-12">
@@ -69,21 +69,21 @@ export default function LoginPage() {
             {/* Logo */}
             <div className="flex items-center gap-4 mb-12">
               <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center shadow-2xl shadow-amber-500/30">
-                <span className="text-[#0f1b2e] font-extrabold text-xl">RS</span>
+                <span className="text-white font-extrabold text-xl">RS</span>
               </div>
               <div>
                 <h1 className="text-3xl font-bold text-white tracking-tight">WBS Office</h1>
-                <p className="text-amber-400/60 text-sm font-medium">Project Management Suite</p>
+                <p className="text-amber-600/60 text-sm font-medium">Project Management Suite</p>
               </div>
             </div>
 
             <h2 className="text-4xl font-bold text-white leading-tight mb-6">
               Gestisci i tuoi progetti
               <br />
-              <span className="text-amber-400">con precisione.</span>
+              <span className="text-amber-600">con precisione.</span>
             </h2>
 
-            <p className="text-lg text-slate-400 leading-relaxed mb-10">
+            <p className="text-lg text-gray-500 leading-relaxed mb-10">
               Dalla struttura WBS al cronoprogramma di Gantt, dalla gestione costi
               alla dashboard di avanzamento. Tutto in un unico strumento professionale.
             </p>
@@ -100,12 +100,12 @@ export default function LoginPage() {
               ].map(f => (
                 <div
                   key={f.label}
-                  className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 backdrop-blur-sm"
+                  className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gray-100 border border-gray-200 backdrop-blur-sm"
                 >
                   <span className="text-lg">{f.icon}</span>
                   <div>
                     <p className="text-xs font-semibold text-white">{f.label}</p>
-                    <p className="text-[10px] text-slate-500">{f.desc}</p>
+                    <p className="text-[10px] text-gray-400">{f.desc}</p>
                   </div>
                 </div>
               ))}
@@ -120,21 +120,21 @@ export default function LoginPage() {
           {/* Logo mobile */}
           <div className="lg:hidden flex items-center gap-3 mb-10 justify-center">
             <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center shadow-lg shadow-amber-500/20">
-              <span className="text-[#0f1b2e] font-extrabold text-sm">RS</span>
+              <span className="text-white font-extrabold text-sm">RS</span>
             </div>
             <div>
               <h1 className="text-xl font-bold text-white">WBS Office</h1>
-              <p className="text-amber-400/50 text-[11px] font-medium">Project Management Suite</p>
+              <p className="text-amber-600/50 text-[11px] font-medium">Project Management Suite</p>
             </div>
           </div>
 
           {/* Card form */}
-          <div className="bg-[#0d2137] rounded-2xl border border-amber-500/20 shadow-2xl shadow-amber-900/10 p-8">
+          <div className="bg-white rounded-2xl border border-gray-300 shadow-xl p-8">
             <div className="text-center mb-8">
-              <h3 className="text-xl font-bold text-amber-400 mb-1">
+              <h3 className="text-xl font-bold text-amber-600 mb-1">
                 {isSignUp ? 'Crea il tuo account' : 'Bentornato'}
               </h3>
-              <p className="text-sm text-amber-500/40">
+              <p className="text-sm text-gray-400">
                 {isSignUp
                   ? 'Registrati per iniziare a gestire i tuoi progetti'
                   : 'Accedi per continuare con i tuoi progetti'}
@@ -144,14 +144,14 @@ export default function LoginPage() {
             <form onSubmit={handleSubmit} className="space-y-5">
               {/* Email */}
               <div>
-                <label className="block mb-1.5 text-xs font-medium text-amber-300/60">
+                <label className="block mb-1.5 text-xs font-medium text-gray-500">
                   Email
                 </label>
                 <input
                   type="email"
                   value={email}
                   onChange={e => setEmail(e.target.value)}
-                  className="w-full bg-[#0a1628] border border-amber-500/30 rounded-xl px-4 py-3 text-sm text-amber-300 placeholder-amber-500/20 focus:outline-none focus:ring-2 focus:ring-amber-400/50 focus:border-amber-400/50 transition-all"
+                  className="w-full bg-gray-50 border border-gray-300 rounded-xl px-4 py-3 text-sm text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500/50 transition-all"
                   placeholder="nome@esempio.com"
                   autoComplete="email"
                   autoFocus
@@ -160,14 +160,14 @@ export default function LoginPage() {
 
               {/* Password */}
               <div>
-                <label className="block mb-1.5 text-xs font-medium text-amber-300/60">
+                <label className="block mb-1.5 text-xs font-medium text-gray-500">
                   Password
                 </label>
                 <input
                   type="password"
                   value={password}
                   onChange={e => setPassword(e.target.value)}
-                  className="w-full bg-[#0a1628] border border-amber-500/30 rounded-xl px-4 py-3 text-sm text-amber-300 placeholder-amber-500/20 focus:outline-none focus:ring-2 focus:ring-amber-400/50 focus:border-amber-400/50 transition-all"
+                  className="w-full bg-gray-50 border border-gray-300 rounded-xl px-4 py-3 text-sm text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500/50 transition-all"
                   placeholder="••••••••"
                   autoComplete={isSignUp ? 'new-password' : 'current-password'}
                 />
@@ -189,7 +189,7 @@ export default function LoginPage() {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full py-3 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 disabled:opacity-50 disabled:cursor-wait text-[#0f1b2e] rounded-xl text-sm font-bold transition-all cursor-pointer shadow-lg shadow-amber-500/20 hover:shadow-amber-500/30"
+                className="w-full py-3 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 disabled:opacity-50 disabled:cursor-wait text-white rounded-xl text-sm font-bold transition-all cursor-pointer shadow-lg shadow-amber-500/20 hover:shadow-amber-500/30"
               >
                 {loading
                   ? '⏳ Attendere...'
@@ -201,11 +201,11 @@ export default function LoginPage() {
 
             {/* Toggle login/signup */}
             <div className="mt-6 text-center">
-              <p className="text-xs text-amber-500/30">
+              <p className="text-xs text-gray-400">
                 {isSignUp ? 'Hai già un account?' : 'Non hai un account?'}
                 <button
                   onClick={() => { setIsSignUp(!isSignUp); setError(''); setSuccess('') }}
-                  className="ml-1.5 text-amber-400 hover:text-amber-300 font-semibold cursor-pointer transition-colors"
+                  className="ml-1.5 text-amber-600 hover:text-gray-700 font-semibold cursor-pointer transition-colors"
                 >
                   {isSignUp ? 'Accedi' : 'Registrati'}
                 </button>
@@ -214,7 +214,7 @@ export default function LoginPage() {
           </div>
 
           {/* Footer */}
-          <p className="text-center text-[10px] text-slate-600 mt-6">
+          <p className="text-center text-[10px] text-gray-400 mt-6">
             WBS Office © {new Date().getFullYear()} — Project Management Suite
           </p>
         </div>

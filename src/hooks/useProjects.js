@@ -209,14 +209,19 @@ function caricaDaStorage() {
     if (raw) {
       const parsed = JSON.parse(raw)
       if (Array.isArray(parsed) && parsed.length > 0) {
-        return parsed.map(p => ricalcolaPercentuali(migraProgetto(p)))
+        // Filtra eventuali progetti demo residui
+        const reali = parsed.filter(p => p.titolo !== 'Progetto Demo')
+        if (reali.length > 0) {
+          return reali.map(p => ricalcolaPercentuali(migraProgetto(p)))
+        }
+        // Se rimangono solo demo, pulisci lo storage
+        localStorage.removeItem(STORAGE_KEY)
       }
     }
   } catch {
     // ignore
   }
-  const demo = ricalcolaPercentuali(creaProgettoDemo())
-  return [demo]
+  return []
 }
 
 /** Salvataggio locale (sempre attivo come cache) */
@@ -257,7 +262,9 @@ export function useProjects() {
         const provider = await getProvider()
         const cloud = await provider.loadProjects()
         if (cloud && cloud.length > 0) {
-          const migrated = cloud.map(p => ricalcolaPercentuali(migraProgetto(p)))
+          const migrated = cloud
+            .filter(p => p.titolo !== 'Progetto Demo')
+            .map(p => ricalcolaPercentuali(migraProgetto(p)))
           setProjects(migrated)
           setActiveProjectId(migrated[0].id)
         }

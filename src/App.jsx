@@ -15,12 +15,12 @@ export default function App() {
   if (cloud && !user) {
     if (loading) {
       return (
-        <div className="min-h-screen flex items-center justify-center bg-[#0a1929]">
+        <div className="min-h-screen flex items-center justify-center bg-white">
           <div className="text-center">
             <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center mx-auto mb-4 animate-pulse">
-              <span className="text-[#0f1b2e] font-extrabold text-lg">RS</span>
+              <span className="text-white font-extrabold text-lg">RS</span>
             </div>
-            <p className="text-amber-400/60 text-sm">Caricamento...</p>
+            <p className="text-amber-600 text-sm">Caricamento...</p>
           </div>
         </div>
       )
@@ -52,7 +52,7 @@ export default function App() {
   const progettoIndex = projects.findIndex(p => p.id === activeProjectId)
 
   return (
-    <div className="flex h-screen bg-[#0a1929]">
+    <div className="flex h-screen bg-gray-50">
       {/* Sidebar */}
       <Sidebar
         projects={projects}
@@ -68,13 +68,13 @@ export default function App() {
       {activeProject ? (
         <div className="flex-1 flex flex-col overflow-hidden">
           {/* Tab Navigation */}
-          <div className="bg-[#0d2137] border-b border-amber-500/20 px-6 flex gap-1 pt-2">
+          <div className="bg-white border-b border-gray-300 px-6 flex gap-1 pt-2">
             <button
               onClick={() => setVista('dashboard')}
               className={`px-4 py-2.5 text-sm font-medium rounded-t-lg transition-colors cursor-pointer ${
                 vista === 'dashboard'
-                  ? 'bg-[#0a1929] text-amber-400 border border-amber-500/30 border-b-[#0a1929] -mb-px'
-                  : 'text-amber-500/40 hover:text-amber-400'
+                  ? 'bg-gray-50 text-amber-600 border border-gray-300 border-b-gray-50 -mb-px'
+                  : 'text-gray-400 hover:text-amber-600'
               }`}
             >
               📊 Dashboard
@@ -83,8 +83,8 @@ export default function App() {
               onClick={() => setVista('wbs')}
               className={`px-4 py-2.5 text-sm font-medium rounded-t-lg transition-colors cursor-pointer ${
                 vista === 'wbs'
-                  ? 'bg-[#0a1929] text-amber-400 border border-amber-500/30 border-b-[#0a1929] -mb-px'
-                  : 'text-amber-500/40 hover:text-amber-400'
+                  ? 'bg-gray-50 text-amber-600 border border-gray-300 border-b-gray-50 -mb-px'
+                  : 'text-gray-400 hover:text-amber-600'
               }`}
             >
               🌳 Albero WBS
@@ -93,8 +93,8 @@ export default function App() {
               onClick={() => setVista('costi')}
               className={`px-4 py-2.5 text-sm font-medium rounded-t-lg transition-colors cursor-pointer ${
                 vista === 'costi'
-                  ? 'bg-[#0a1929] text-amber-400 border border-amber-500/30 border-b-[#0a1929] -mb-px'
-                  : 'text-amber-500/40 hover:text-amber-400'
+                  ? 'bg-gray-50 text-amber-600 border border-gray-300 border-b-gray-50 -mb-px'
+                  : 'text-gray-400 hover:text-amber-600'
               }`}
             >
               💰 Costi
@@ -103,8 +103,8 @@ export default function App() {
               onClick={() => setVista('gantt')}
               className={`px-4 py-2.5 text-sm font-medium rounded-t-lg transition-colors cursor-pointer ${
                 vista === 'gantt'
-                  ? 'bg-[#0a1929] text-amber-400 border border-amber-500/30 border-b-[#0a1929] -mb-px'
-                  : 'text-amber-500/40 hover:text-amber-400'
+                  ? 'bg-gray-50 text-amber-600 border border-gray-300 border-b-gray-50 -mb-px'
+                  : 'text-gray-400 hover:text-amber-600'
               }`}
             >
               📅 Cronoprogramma
@@ -135,10 +135,10 @@ export default function App() {
           )}
         </div>
       ) : (
-        <div className="flex-1 flex items-center justify-center text-amber-500/40">
+        <div className="flex-1 flex items-center justify-center text-gray-400">
           <div className="text-center">
             <p className="text-5xl mb-4">📊</p>
-            <p className="text-lg font-medium text-amber-400">WBS Office</p>
+            <p className="text-lg font-medium text-amber-600">WBS Office</p>
             <p className="text-sm mt-1">
               Seleziona o crea un progetto per iniziare
             </p>
