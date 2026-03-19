@@ -1,52 +1,55 @@
-import { useState } from 'react'
-import { useAuth } from '../lib/AuthContext'
+import { useState } from "react";
+import { useAuth } from "../lib/AuthContext";
 
 export default function LoginPage() {
-  const { signIn, signUp } = useAuth()
-  const [isSignUp, setIsSignUp] = useState(false)
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [error, setError] = useState('')
-  const [loading, setLoading] = useState(false)
-  const [success, setSuccess] = useState('')
+  const { signIn, signUp } = useAuth();
+  const [isSignUp, setIsSignUp] = useState(false);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [success, setSuccess] = useState("");
 
   const handleSubmit = async (e) => {
-    e.preventDefault()
-    setError('')
-    setSuccess('')
+    e.preventDefault();
+    setError("");
+    setSuccess("");
 
     if (!email.trim() || !password.trim()) {
-      setError('Inserisci email e password')
-      return
+      setError("Inserisci email e password");
+      return;
     }
     if (password.length < 6) {
-      setError('La password deve avere almeno 6 caratteri')
-      return
+      setError("La password deve avere almeno 6 caratteri");
+      return;
     }
 
-    setLoading(true)
+    setLoading(true);
     try {
       if (isSignUp) {
-        const { error: err } = await signUp(email, password)
+        const { error: err } = await signUp(email, password);
         if (err) {
-          setError(err.message)
+          setError(err.message);
         } else {
-          setSuccess('Registrazione completata! Controlla la tua email per confermare l\'account.')
-          setIsSignUp(false)
+          setSuccess(
+            "Registrazione completata! Controlla la tua email per confermare l'account.",
+          );
+          setIsSignUp(false);
         }
       } else {
-        const { error: err } = await signIn(email, password)
+        const { error: err } = await signIn(email, password);
         if (err) {
-          setError(err.message === 'Invalid login credentials'
-            ? 'Credenziali non valide. Controlla email e password.'
-            : err.message
-          )
+          setError(
+            err.message === "Invalid login credentials"
+              ? "Credenziali non valide. Controlla email e password."
+              : err.message,
+          );
         }
       }
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   return (
     <div className="min-h-screen flex bg-gray-50 overflow-hidden">
@@ -72,8 +75,12 @@ export default function LoginPage() {
                 <span className="text-white font-extrabold text-xl">RS</span>
               </div>
               <div>
-                <h1 className="text-3xl font-bold text-white tracking-tight">WBS Office</h1>
-                <p className="text-amber-600/60 text-sm font-medium">Project Management Suite</p>
+                <h1 className="text-3xl font-bold text-white tracking-tight">
+                  WBS Office
+                </h1>
+                <p className="text-amber-600/60 text-sm font-medium">
+                  Project Management Suite
+                </p>
               </div>
             </div>
 
@@ -84,27 +91,30 @@ export default function LoginPage() {
             </h2>
 
             <p className="text-lg text-gray-500 leading-relaxed mb-10">
-              Dalla struttura WBS al cronoprogramma di Gantt, dalla gestione costi
-              alla dashboard di avanzamento. Tutto in un unico strumento professionale.
+              Dalla struttura WBS al cronoprogramma di Gantt, dalla gestione
+              costi alla dashboard di avanzamento. Tutto in un unico strumento
+              professionale.
             </p>
 
             {/* Feature pills */}
             <div className="flex flex-wrap gap-3">
               {[
-                { icon: '🌳', label: 'Albero WBS', desc: 'Gerarchia infinita' },
-                { icon: '📅', label: 'Gantt', desc: 'Cronoprogramma' },
-                { icon: '💰', label: 'Costi', desc: 'Budget & Materiali' },
-                { icon: '📊', label: 'Dashboard', desc: 'Vista globale' },
-                { icon: '🖨️', label: 'PDF', desc: 'Export professionale' },
-                { icon: '☁️', label: 'Cloud', desc: 'Sync automatico' },
-              ].map(f => (
+                { icon: "🌳", label: "Albero WBS", desc: "Gerarchia infinita" },
+                { icon: "📅", label: "Gantt", desc: "Cronoprogramma" },
+                { icon: "💰", label: "Costi", desc: "Budget & Materiali" },
+                { icon: "📊", label: "Dashboard", desc: "Vista globale" },
+                { icon: "🖨️", label: "PDF", desc: "Export professionale" },
+                { icon: "☁️", label: "Cloud", desc: "Sync automatico" },
+              ].map((f) => (
                 <div
                   key={f.label}
                   className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gray-100 border border-gray-200 backdrop-blur-sm"
                 >
                   <span className="text-lg">{f.icon}</span>
                   <div>
-                    <p className="text-xs font-semibold text-white">{f.label}</p>
+                    <p className="text-xs font-semibold text-white">
+                      {f.label}
+                    </p>
                     <p className="text-[10px] text-gray-400">{f.desc}</p>
                   </div>
                 </div>
@@ -124,7 +134,9 @@ export default function LoginPage() {
             </div>
             <div>
               <h1 className="text-xl font-bold text-white">WBS Office</h1>
-              <p className="text-amber-600/50 text-[11px] font-medium">Project Management Suite</p>
+              <p className="text-amber-600/50 text-[11px] font-medium">
+                Project Management Suite
+              </p>
             </div>
           </div>
 
@@ -132,12 +144,12 @@ export default function LoginPage() {
           <div className="bg-white rounded-2xl border border-gray-300 shadow-xl p-8">
             <div className="text-center mb-8">
               <h3 className="text-xl font-bold text-amber-600 mb-1">
-                {isSignUp ? 'Crea il tuo account' : 'Bentornato'}
+                {isSignUp ? "Crea il tuo account" : "Bentornato"}
               </h3>
               <p className="text-sm text-gray-400">
                 {isSignUp
-                  ? 'Registrati per iniziare a gestire i tuoi progetti'
-                  : 'Accedi per continuare con i tuoi progetti'}
+                  ? "Registrati per iniziare a gestire i tuoi progetti"
+                  : "Accedi per continuare con i tuoi progetti"}
               </p>
             </div>
 
@@ -150,7 +162,7 @@ export default function LoginPage() {
                 <input
                   type="email"
                   value={email}
-                  onChange={e => setEmail(e.target.value)}
+                  onChange={(e) => setEmail(e.target.value)}
                   className="w-full bg-gray-50 border border-gray-300 rounded-xl px-4 py-3 text-sm text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500/50 transition-all"
                   placeholder="nome@esempio.com"
                   autoComplete="email"
@@ -166,10 +178,10 @@ export default function LoginPage() {
                 <input
                   type="password"
                   value={password}
-                  onChange={e => setPassword(e.target.value)}
+                  onChange={(e) => setPassword(e.target.value)}
                   className="w-full bg-gray-50 border border-gray-300 rounded-xl px-4 py-3 text-sm text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500/50 transition-all"
                   placeholder="••••••••"
-                  autoComplete={isSignUp ? 'new-password' : 'current-password'}
+                  autoComplete={isSignUp ? "new-password" : "current-password"}
                 />
               </div>
 
@@ -192,22 +204,26 @@ export default function LoginPage() {
                 className="w-full py-3 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 disabled:opacity-50 disabled:cursor-wait text-white rounded-xl text-sm font-bold transition-all cursor-pointer shadow-lg shadow-amber-500/20 hover:shadow-amber-500/30"
               >
                 {loading
-                  ? '⏳ Attendere...'
+                  ? "⏳ Attendere..."
                   : isSignUp
-                    ? '🚀 Registrati'
-                    : '🔐 Accedi'}
+                    ? "🚀 Registrati"
+                    : "🔐 Accedi"}
               </button>
             </form>
 
             {/* Toggle login/signup */}
             <div className="mt-6 text-center">
               <p className="text-xs text-gray-400">
-                {isSignUp ? 'Hai già un account?' : 'Non hai un account?'}
+                {isSignUp ? "Hai già un account?" : "Non hai un account?"}
                 <button
-                  onClick={() => { setIsSignUp(!isSignUp); setError(''); setSuccess('') }}
+                  onClick={() => {
+                    setIsSignUp(!isSignUp);
+                    setError("");
+                    setSuccess("");
+                  }}
                   className="ml-1.5 text-amber-600 hover:text-gray-700 font-semibold cursor-pointer transition-colors"
                 >
-                  {isSignUp ? 'Accedi' : 'Registrati'}
+                  {isSignUp ? "Accedi" : "Registrati"}
                 </button>
               </p>
             </div>
@@ -220,5 +236,5 @@ export default function LoginPage() {
         </div>
       </div>
     </div>
-  )
+  );
 }

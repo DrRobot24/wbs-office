@@ -9,9 +9,9 @@
  * Altrimenti si usa localStorage come fallback trasparente.
  */
 
-import { supabase, isSupabaseConfigured } from './supabaseClient'
+import { supabase, isSupabaseConfigured } from "./supabaseClient";
 
-const STORAGE_KEY = 'wbs-projects'
+const STORAGE_KEY = "wbs-projects";
 
 /* ═══════════════════════════════════════
    localStorage provider (offline / dev)
@@ -19,33 +19,35 @@ const STORAGE_KEY = 'wbs-projects'
 const localProvider = {
   async loadProjects() {
     try {
-      const raw = localStorage.getItem(STORAGE_KEY)
+      const raw = localStorage.getItem(STORAGE_KEY);
       if (raw) {
-        const parsed = JSON.parse(raw)
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
       }
-    } catch { /* ignore */ }
-    return null // segnala "nessun dato salvato"
+    } catch {
+      /* ignore */
+    }
+    return null; // segnala "nessun dato salvato"
   },
 
   async saveProjects(projects) {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(projects))
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(projects));
   },
 
   async saveProject(project) {
     // Salva l'intero array (localStorage non supporta update parziali efficienti)
-    const all = await this.loadProjects() || []
-    const idx = all.findIndex(p => p.id === project.id)
-    if (idx >= 0) all[idx] = project
-    else all.push(project)
-    await this.saveProjects(all)
+    const all = (await this.loadProjects()) || [];
+    const idx = all.findIndex((p) => p.id === project.id);
+    if (idx >= 0) all[idx] = project;
+    else all.push(project);
+    await this.saveProjects(all);
   },
 
   async deleteProject(projectId) {
-    const all = await this.loadProjects() || []
-    await this.saveProjects(all.filter(p => p.id !== projectId))
+    const all = (await this.loadProjects()) || [];
+    await this.saveProjects(all.filter((p) => p.id !== projectId));
   },
-}
+};
 
 /* ═══════════════════════════════════════
    Supabase provider (cloud / production)
@@ -75,65 +77,70 @@ const localProvider = {
 
 const supabaseProvider = {
   async loadProjects() {
-    if (!supabase) return null
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return null
+    if (!supabase) return null;
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return null;
 
     const { data, error } = await supabase
-      .from('projects')
-      .select('id, titolo, data, updated_at')
-      .eq('user_id', user.id)
-      .order('created_at', { ascending: true })
+      .from("projects")
+      .select("id, titolo, data, updated_at")
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: true });
 
     if (error) {
-      console.error('[Supabase] loadProjects error:', error.message)
-      return null
+      console.error("[Supabase] loadProjects error:", error.message);
+      return null;
     }
 
     // Ricostruisce l'array di progetti dal formato DB
-    return data.map(row => ({
+    return data.map((row) => ({
       ...row.data,
       id: row.id,
       titolo: row.titolo,
-    }))
+    }));
   },
 
   async saveProjects(projects) {
-    if (!supabase) return
+    if (!supabase) return;
     // Batch upsert — usato per import/sync completo
     for (const p of projects) {
-      await this.saveProject(p)
+      await this.saveProject(p);
     }
   },
 
   async saveProject(project) {
-    if (!supabase) return
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return
+    if (!supabase) return;
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return;
 
-    const { error } = await supabase
-      .from('projects')
-      .upsert({
+    const { error } = await supabase.from("projects").upsert(
+      {
         id: project.id,
         user_id: user.id,
         titolo: project.titolo,
         data: project,
         updated_at: new Date().toISOString(),
-      }, { onConflict: 'id' })
+      },
+      { onConflict: "id" },
+    );
 
-    if (error) console.error('[Supabase] saveProject error:', error.message)
+    if (error) console.error("[Supabase] saveProject error:", error.message);
   },
 
   async deleteProject(projectId) {
-    if (!supabase) return
+    if (!supabase) return;
     const { error } = await supabase
-      .from('projects')
+      .from("projects")
       .delete()
-      .eq('id', projectId)
+      .eq("id", projectId);
 
-    if (error) console.error('[Supabase] deleteProject error:', error.message)
+    if (error) console.error("[Supabase] deleteProject error:", error.message);
   },
-}
+};
 
 /* ═══════════════════════════════════════
    Selettore automatico del provider
@@ -146,17 +153,19 @@ const supabaseProvider = {
  */
 export async function getProvider() {
   if (isSupabaseConfigured() && supabase) {
-    const { data: { user } } = await supabase.auth.getUser()
-    if (user) return supabaseProvider
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (user) return supabaseProvider;
   }
-  return localProvider
+  return localProvider;
 }
 
 /**
  * Versione sincrona per check rapido.
  */
 export function isCloudMode() {
-  return isSupabaseConfigured()
+  return isSupabaseConfigured();
 }
 
-export { localProvider, supabaseProvider }
+export { localProvider, supabaseProvider };

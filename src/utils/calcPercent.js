@@ -3,9 +3,9 @@
  * Se l'array è vuoto restituisce 0.
  */
 export function calcolaMedia(items) {
-  if (!items || items.length === 0) return 0
-  const somma = items.reduce((acc, item) => acc + (item.percentuale || 0), 0)
-  return Math.round(somma / items.length)
+  if (!items || items.length === 0) return 0;
+  const somma = items.reduce((acc, item) => acc + (item.percentuale || 0), 0);
+  return Math.round(somma / items.length);
 }
 
 /**
@@ -15,14 +15,14 @@ export function calcolaMedia(items) {
  */
 function ricalcolaNodo(nodo) {
   if (!nodo.children || nodo.children.length === 0) {
-    return nodo // foglia: percentuale manuale
+    return nodo; // foglia: percentuale manuale
   }
-  const childrenAggiornati = nodo.children.map(ricalcolaNodo)
+  const childrenAggiornati = nodo.children.map(ricalcolaNodo);
   return {
     ...nodo,
     children: childrenAggiornati,
     percentuale: calcolaMedia(childrenAggiornati),
-  }
+  };
 }
 
 /**
@@ -33,30 +33,30 @@ function ricalcolaNodo(nodo) {
 export function ricalcolaPercentuali(progetto) {
   // Migrazione: se il progetto usa ancora il vecchio formato fasi/tasks, convertilo
   if (progetto.fasi && !progetto.children) {
-    progetto = migraProgetto(progetto)
+    progetto = migraProgetto(progetto);
   }
-  return ricalcolaNodo(progetto)
+  return ricalcolaNodo(progetto);
 }
 
 /**
  * Migra un progetto dal vecchio formato (fasi[].tasks[]) al nuovo (children[] ricorsivo).
  */
 export function migraProgetto(progetto) {
-  if (progetto.children) return progetto // già migrato
-  const children = (progetto.fasi || []).map(fase => ({
+  if (progetto.children) return progetto; // già migrato
+  const children = (progetto.fasi || []).map((fase) => ({
     id: fase.id,
     titolo: fase.titolo,
     percentuale: fase.percentuale || 0,
-    children: (fase.tasks || []).map(task => ({
+    children: (fase.tasks || []).map((task) => ({
       id: task.id,
       titolo: task.titolo,
-      responsabile: task.responsabile || '',
-      dataScadenza: task.dataScadenza || '',
-      stato: task.stato || 'todo',
+      responsabile: task.responsabile || "",
+      dataScadenza: task.dataScadenza || "",
+      stato: task.stato || "todo",
       percentuale: task.percentuale || 0,
       children: [],
     })),
-  }))
-  const { fasi, ...rest } = progetto
-  return { ...rest, children }
+  }));
+  const { fasi: _fasi, ...rest } = progetto;
+  return { ...rest, children };
 }

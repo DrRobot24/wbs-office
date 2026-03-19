@@ -1,32 +1,15 @@
-import { useState } from 'react'
-import Sidebar from './components/Sidebar'
-import WBSTree from './components/WBSTree'
-import Dashboard from './components/Dashboard'
-import CostiManagement from './components/CostiManagement'
-import GanttChart from './components/GanttChart'
-import LoginPage from './components/LoginPage'
-import { useProjects } from './hooks/useProjects'
-import { useAuth } from './lib/AuthContext'
+import { useState } from "react";
+import Sidebar from "./components/Sidebar";
+import WBSTree from "./components/WBSTree";
+import Dashboard from "./components/Dashboard";
+import CostiManagement from "./components/CostiManagement";
+import GanttChart from "./components/GanttChart";
+import LoginPage from "./components/LoginPage";
+import { useProjects } from "./hooks/useProjects";
+import { useAuth } from "./lib/AuthContext";
 
 export default function App() {
-  const { user, loading, cloud } = useAuth()
-
-  // Se Supabase è configurato e non c'è utente → mostra login
-  if (cloud && !user) {
-    if (loading) {
-      return (
-        <div className="min-h-screen flex items-center justify-center bg-white">
-          <div className="text-center">
-            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center mx-auto mb-4 animate-pulse">
-              <span className="text-white font-extrabold text-lg">RS</span>
-            </div>
-            <p className="text-amber-600 text-sm">Caricamento...</p>
-          </div>
-        </div>
-      )
-    }
-    return <LoginPage />
-  }
+  const { user, loading, cloud } = useAuth();
 
   const {
     projects,
@@ -46,10 +29,27 @@ export default function App() {
     declassaNodo,
     esportaJSON,
     importaJSON,
-  } = useProjects()
+  } = useProjects();
 
-  const [vista, setVista] = useState('dashboard') // 'dashboard' | 'wbs' | 'costi' | 'gantt'
-  const progettoIndex = projects.findIndex(p => p.id === activeProjectId)
+  const [vista, setVista] = useState("dashboard"); // 'dashboard' | 'wbs' | 'costi' | 'gantt'
+
+  // Se Supabase è configurato e non c'è utente → mostra login
+  if (cloud && !user) {
+    if (loading) {
+      return (
+        <div className="min-h-screen flex items-center justify-center bg-white">
+          <div className="text-center">
+            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center mx-auto mb-4 animate-pulse">
+              <span className="text-white font-extrabold text-lg">RS</span>
+            </div>
+            <p className="text-amber-600 text-sm">Caricamento...</p>
+          </div>
+        </div>
+      );
+    }
+    return <LoginPage />;
+  }
+  const progettoIndex = projects.findIndex((p) => p.id === activeProjectId);
 
   return (
     <div className="flex h-screen bg-gray-50">
@@ -57,7 +57,10 @@ export default function App() {
       <Sidebar
         projects={projects}
         activeProjectId={activeProjectId}
-        onSelectProject={(id) => { setActiveProjectId(id); setVista('dashboard') }}
+        onSelectProject={(id) => {
+          setActiveProjectId(id);
+          setVista("dashboard");
+        }}
         onAggiungiProgetto={aggiungiProgetto}
         onEliminaProgetto={eliminaProgetto}
         onEsportaJSON={esportaJSON}
@@ -70,41 +73,41 @@ export default function App() {
           {/* Tab Navigation */}
           <div className="bg-white border-b border-gray-300 px-6 flex gap-1 pt-2">
             <button
-              onClick={() => setVista('dashboard')}
+              onClick={() => setVista("dashboard")}
               className={`px-4 py-2.5 text-sm font-medium rounded-t-lg transition-colors cursor-pointer ${
-                vista === 'dashboard'
-                  ? 'bg-gray-50 text-amber-600 border border-gray-300 border-b-gray-50 -mb-px'
-                  : 'text-gray-400 hover:text-amber-600'
+                vista === "dashboard"
+                  ? "bg-gray-50 text-amber-600 border border-gray-300 border-b-gray-50 -mb-px"
+                  : "text-gray-400 hover:text-amber-600"
               }`}
             >
               📊 Dashboard
             </button>
             <button
-              onClick={() => setVista('wbs')}
+              onClick={() => setVista("wbs")}
               className={`px-4 py-2.5 text-sm font-medium rounded-t-lg transition-colors cursor-pointer ${
-                vista === 'wbs'
-                  ? 'bg-gray-50 text-amber-600 border border-gray-300 border-b-gray-50 -mb-px'
-                  : 'text-gray-400 hover:text-amber-600'
+                vista === "wbs"
+                  ? "bg-gray-50 text-amber-600 border border-gray-300 border-b-gray-50 -mb-px"
+                  : "text-gray-400 hover:text-amber-600"
               }`}
             >
               🌳 Albero WBS
             </button>
             <button
-              onClick={() => setVista('costi')}
+              onClick={() => setVista("costi")}
               className={`px-4 py-2.5 text-sm font-medium rounded-t-lg transition-colors cursor-pointer ${
-                vista === 'costi'
-                  ? 'bg-gray-50 text-amber-600 border border-gray-300 border-b-gray-50 -mb-px'
-                  : 'text-gray-400 hover:text-amber-600'
+                vista === "costi"
+                  ? "bg-gray-50 text-amber-600 border border-gray-300 border-b-gray-50 -mb-px"
+                  : "text-gray-400 hover:text-amber-600"
               }`}
             >
               💰 Costi
             </button>
             <button
-              onClick={() => setVista('gantt')}
+              onClick={() => setVista("gantt")}
               className={`px-4 py-2.5 text-sm font-medium rounded-t-lg transition-colors cursor-pointer ${
-                vista === 'gantt'
-                  ? 'bg-gray-50 text-amber-600 border border-gray-300 border-b-gray-50 -mb-px'
-                  : 'text-gray-400 hover:text-amber-600'
+                vista === "gantt"
+                  ? "bg-gray-50 text-amber-600 border border-gray-300 border-b-gray-50 -mb-px"
+                  : "text-gray-400 hover:text-amber-600"
               }`}
             >
               📅 Cronoprogramma
@@ -112,11 +115,16 @@ export default function App() {
           </div>
 
           {/* Vista attiva */}
-          {vista === 'dashboard' ? (
+          {vista === "dashboard" ? (
             <Dashboard progetto={activeProject} />
-          ) : vista === 'costi' ? (
-            <CostiManagement progetto={activeProject} />
-          ) : vista === 'gantt' ? (
+          ) : vista === "costi" ? (
+            <CostiManagement
+              progetto={activeProject}
+              onAggiornaNodo={(nodeId, data) =>
+                aggiornaNodo(activeProject.id, nodeId, data)
+              }
+            />
+          ) : vista === "gantt" ? (
             <GanttChart progetto={activeProject} />
           ) : (
             <WBSTree
@@ -146,5 +154,5 @@ export default function App() {
         </div>
       )}
     </div>
-  )
+  );
 }

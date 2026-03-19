@@ -11,7 +11,7 @@
 
 /* Horizontal connector segment (part of the bar linking siblings) */
 .wbs-child-wrapper::before {
-  content: '';
+  content: "";
   position: absolute;
   top: 0;
   height: 1px;
@@ -43,7 +43,7 @@
 
 /* Vertical connector from horizontal bar down to child node */
 .wbs-child-wrapper::after {
-  content: '';
+  content: "";
   position: absolute;
   top: 0;
   left: 50%;

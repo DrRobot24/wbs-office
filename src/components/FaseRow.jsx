@@ -1,7 +1,7 @@
-import { useState } from 'react'
-import TaskRow from './TaskRow'
-import ProgressBar from './ProgressBar'
-import { generaWbsCode } from '../utils/wbsCode'
+import { useState } from "react";
+import TaskRow from "./TaskRow";
+import ProgressBar from "./ProgressBar";
+import { generaWbsCode } from "../utils/wbsCode";
 
 export default function FaseRow({
   fase,
@@ -12,20 +12,20 @@ export default function FaseRow({
   onEliminaFase,
   onRinominaFase,
 }) {
-  const [aperta, setAperta] = useState(true)
-  const [editing, setEditing] = useState(false)
-  const [titoloTemp, setTitoloTemp] = useState(fase.titolo)
+  const [aperta, setAperta] = useState(true);
+  const [editing, setEditing] = useState(false);
+  const [titoloTemp, setTitoloTemp] = useState(fase.titolo);
 
-  const wbsCodeFase = generaWbsCode(progettoIndex, faseIndex)
+  const wbsCodeFase = generaWbsCode(progettoIndex, faseIndex);
 
   const handleRinomina = () => {
     if (titoloTemp.trim()) {
-      onRinominaFase(fase.id, titoloTemp.trim())
+      onRinominaFase(fase.id, titoloTemp.trim());
     } else {
-      setTitoloTemp(fase.titolo)
+      setTitoloTemp(fase.titolo);
     }
-    setEditing(false)
-  }
+    setEditing(false);
+  };
 
   return (
     <div className="mb-4">
@@ -35,15 +35,20 @@ export default function FaseRow({
         <button
           onClick={() => setAperta(!aperta)}
           className="text-slate-400 hover:text-indigo-500 transition-colors cursor-pointer"
-          title={aperta ? 'Comprimi' : 'Espandi'}
+          title={aperta ? "Comprimi" : "Espandi"}
         >
           <svg
-            className={`w-4 h-4 transition-transform ${aperta ? 'rotate-90' : ''}`}
+            className={`w-4 h-4 transition-transform ${aperta ? "rotate-90" : ""}`}
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
           >
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M9 5l7 7-7 7"
+            />
           </svg>
         </button>
 
@@ -54,9 +59,9 @@ export default function FaseRow({
         {editing ? (
           <input
             value={titoloTemp}
-            onChange={e => setTitoloTemp(e.target.value)}
+            onChange={(e) => setTitoloTemp(e.target.value)}
             onBlur={handleRinomina}
-            onKeyDown={e => e.key === 'Enter' && handleRinomina()}
+            onKeyDown={(e) => e.key === "Enter" && handleRinomina()}
             className="flex-1 bg-white border border-indigo-300 rounded px-2 py-0.5 text-sm font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-400"
             autoFocus
           />
@@ -64,8 +69,8 @@ export default function FaseRow({
           <span
             className="flex-1 text-sm font-semibold text-slate-700 cursor-pointer"
             onDoubleClick={() => {
-              setTitoloTemp(fase.titolo)
-              setEditing(true)
+              setTitoloTemp(fase.titolo);
+              setEditing(true);
             }}
             title="Doppio click per rinominare"
           >
@@ -119,5 +124,5 @@ export default function FaseRow({
         </div>
       )}
     </div>
-  )
+  );
 }

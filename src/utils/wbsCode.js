@@ -7,10 +7,10 @@
  * Esempi: "1.1", "1.2", "1.2.3"
  */
 export function generaWbsCode(progettoIndex, faseIndex, taskIndex) {
-  const p = progettoIndex + 1
-  const f = faseIndex + 1
+  const p = progettoIndex + 1;
+  const f = faseIndex + 1;
   if (taskIndex === undefined || taskIndex === null) {
-    return `${p}.${f}`
+    return `${p}.${f}`;
   }
-  return `${p}.${f}.${taskIndex + 1}`
+  return `${p}.${f}.${taskIndex + 1}`;
 }

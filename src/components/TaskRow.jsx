@@ -1,14 +1,14 @@
 const badgeClassi = {
-  'todo': 'bg-red-500/20 text-red-400',
-  'in-progress': 'bg-yellow-500/20 text-yellow-400',
-  'done': 'bg-green-500/20 text-green-400',
-}
+  todo: "bg-red-500/20 text-red-400",
+  "in-progress": "bg-yellow-500/20 text-yellow-400",
+  done: "bg-green-500/20 text-green-400",
+};
 
 const badgeLabels = {
-  'todo': 'Da fare',
-  'in-progress': 'In corso',
-  'done': 'Completato',
-}
+  todo: "Da fare",
+  "in-progress": "In corso",
+  done: "Completato",
+};
 
 export default function TaskRow({ task, wbsCode, onClick }) {
   return (
@@ -42,7 +42,7 @@ export default function TaskRow({ task, wbsCode, onClick }) {
 
       {/* Badge stato */}
       <span
-        className={`text-xs px-2 py-0.5 rounded-full font-medium ${badgeClassi[task.stato] || badgeClassi['todo']}`}
+        className={`text-xs px-2 py-0.5 rounded-full font-medium ${badgeClassi[task.stato] || badgeClassi["todo"]}`}
       >
         {badgeLabels[task.stato] || task.stato}
       </span>
@@ -52,5 +52,5 @@ export default function TaskRow({ task, wbsCode, onClick }) {
         {task.percentuale}%
       </span>
     </div>
-  )
+  );
 }
