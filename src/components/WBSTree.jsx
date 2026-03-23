@@ -484,6 +484,7 @@ export default function WBSTree({
   const treeRef = useRef(null);
   const [isPanning, setIsPanning] = useState(false);
   const [exporting, setExporting] = useState(false);
+  const [formatoPDF, setFormatoPDF] = useState("a4");
   const panRef = useRef({ startX: 0, startY: 0, scrollX: 0, scrollY: 0 });
 
   /* ── Export tree as visual PDF ── */
@@ -639,9 +640,9 @@ export default function WBSTree({
       const imgW = img.width;
       const imgH = img.height;
 
-      // A4 landscape dimensions in mm
-      const pdfW = 297;
-      const pdfH = 210;
+      // Page dimensions in mm (landscape)
+      const pdfW = formatoPDF === "a3" ? 420 : 297;
+      const pdfH = formatoPDF === "a3" ? 297 : 210;
       const margin = 10;
       const headerH = 28;
       const usableW = pdfW - margin * 2;
@@ -654,7 +655,7 @@ export default function WBSTree({
       const doc = new jsPDF({
         orientation: "landscape",
         unit: "mm",
-        format: "a4",
+        format: formatoPDF,
       });
 
       // ── Branded header (light) ──
@@ -819,6 +820,15 @@ export default function WBSTree({
             Work Breakdown Structure | Gerarchia libera a livelli infiniti
           </p>
         </div>
+        <select
+          value={formatoPDF}
+          onChange={(e) => setFormatoPDF(e.target.value)}
+          className="h-9 px-2 bg-gray-50 border border-gray-300 rounded-lg text-xs text-gray-600 cursor-pointer focus:outline-none focus:ring-1 focus:ring-red-300"
+          title="Formato carta PDF"
+        >
+          <option value="a4">A4</option>
+          <option value="a3">A3</option>
+        </select>
         <button
           onClick={handleExportTreePDF}
           disabled={exporting}

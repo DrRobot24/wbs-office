@@ -221,8 +221,6 @@ export default function Dashboard({ progetto }) {
             >
               <option value="a4">A4</option>
               <option value="a3">A3</option>
-              <option value="a2">A2</option>
-              <option value="a1">A1</option>
             </select>
             <button
               onClick={() => esportaPDF(progetto, formatoPDF)}
