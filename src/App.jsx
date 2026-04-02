@@ -9,7 +9,7 @@ import { useProjects } from "./hooks/useProjects";
 import { useAuth } from "./lib/AuthContext";
 
 export default function App() {
-  const { user, loading, cloud } = useAuth();
+  const { user, profile, loading, cloud } = useAuth();
 
   const {
     projects,
@@ -18,13 +18,10 @@ export default function App() {
     setActiveProjectId,
     aggiungiProgetto,
     eliminaProgetto,
-    rinominaProgetto,
     aggiungiNodo,
     eliminaNodo,
-    rinominaNodo,
     aggiornaNodo,
     spostaNodo,
-    spostaNodoLaterale,
     promuoviNodo,
     declassaNodo,
     esportaJSON,
@@ -37,12 +34,12 @@ export default function App() {
   if (cloud && !user) {
     if (loading) {
       return (
-        <div className="min-h-screen flex items-center justify-center bg-white">
+        <div className="min-h-screen flex items-center justify-center bg-gray-50">
           <div className="text-center">
-            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center mx-auto mb-4 animate-pulse">
-              <span className="text-white font-extrabold text-lg">RS</span>
+            <div className="w-14 h-14 rounded-xl bg-amber-400 border-2 border-black shadow-[4px_4px_0px_#000] flex items-center justify-center mx-auto mb-4 animate-pulse">
+              <span className="text-black font-extrabold text-lg">RS</span>
             </div>
-            <p className="text-amber-600 text-sm">Caricamento...</p>
+            <p className="text-black font-bold text-sm">Caricamento...</p>
           </div>
         </div>
       );
@@ -52,7 +49,7 @@ export default function App() {
   const progettoIndex = projects.findIndex((p) => p.id === activeProjectId);
 
   return (
-    <div className="flex h-screen bg-gray-50">
+    <div className="flex h-screen bg-gray-100">
       {/* Sidebar */}
       <Sidebar
         projects={projects}
@@ -71,52 +68,71 @@ export default function App() {
       {activeProject ? (
         <div className="flex-1 flex flex-col overflow-hidden">
           {/* Tab Navigation */}
-          <div className="bg-white border-b border-gray-300 px-6 flex gap-1 pt-2">
+          <div className="bg-white border-b-2 border-black px-6 flex items-end gap-2 pt-3">
             <button
               onClick={() => setVista("dashboard")}
-              className={`px-4 py-2.5 text-sm font-medium rounded-t-lg transition-colors cursor-pointer ${
+              className={`px-5 py-2.5 text-sm font-bold rounded-t-xl transition-all cursor-pointer ${
                 vista === "dashboard"
-                  ? "bg-gray-50 text-amber-600 border border-gray-300 border-b-gray-50 -mb-px"
-                  : "text-gray-400 hover:text-amber-600"
+                  ? "bg-amber-400 text-black border-2 border-black border-b-0 -mb-[2px] shadow-[2px_-2px_0px_#000]"
+                  : "text-gray-500 hover:text-black hover:bg-gray-100 border-2 border-transparent"
               }`}
             >
               📊 Dashboard
             </button>
             <button
               onClick={() => setVista("wbs")}
-              className={`px-4 py-2.5 text-sm font-medium rounded-t-lg transition-colors cursor-pointer ${
+              className={`px-5 py-2.5 text-sm font-bold rounded-t-xl transition-all cursor-pointer ${
                 vista === "wbs"
-                  ? "bg-gray-50 text-amber-600 border border-gray-300 border-b-gray-50 -mb-px"
-                  : "text-gray-400 hover:text-amber-600"
+                  ? "bg-sky-300 text-black border-2 border-black border-b-0 -mb-[2px] shadow-[2px_-2px_0px_#000]"
+                  : "text-gray-500 hover:text-black hover:bg-gray-100 border-2 border-transparent"
               }`}
             >
               🌳 Albero WBS
             </button>
             <button
               onClick={() => setVista("costi")}
-              className={`px-4 py-2.5 text-sm font-medium rounded-t-lg transition-colors cursor-pointer ${
+              className={`px-5 py-2.5 text-sm font-bold rounded-t-xl transition-all cursor-pointer ${
                 vista === "costi"
-                  ? "bg-gray-50 text-amber-600 border border-gray-300 border-b-gray-50 -mb-px"
-                  : "text-gray-400 hover:text-amber-600"
+                  ? "bg-lime-300 text-black border-2 border-black border-b-0 -mb-[2px] shadow-[2px_-2px_0px_#000]"
+                  : "text-gray-500 hover:text-black hover:bg-gray-100 border-2 border-transparent"
               }`}
             >
               💰 Costi
             </button>
             <button
               onClick={() => setVista("gantt")}
-              className={`px-4 py-2.5 text-sm font-medium rounded-t-lg transition-colors cursor-pointer ${
+              className={`px-5 py-2.5 text-sm font-bold rounded-t-xl transition-all cursor-pointer ${
                 vista === "gantt"
-                  ? "bg-gray-50 text-amber-600 border border-gray-300 border-b-gray-50 -mb-px"
-                  : "text-gray-400 hover:text-amber-600"
+                  ? "bg-violet-300 text-black border-2 border-black border-b-0 -mb-[2px] shadow-[2px_-2px_0px_#000]"
+                  : "text-gray-500 hover:text-black hover:bg-gray-100 border-2 border-transparent"
               }`}
             >
               📅 Cronoprogramma
             </button>
+
+            {/* Spacer + User badge */}
+            <div className="flex-1" />
+            {user && (
+              <div className="flex items-center gap-2 mb-1.5 px-3 py-1.5 bg-gray-100 border-2 border-black rounded-xl shadow-[2px_2px_0px_#000]">
+                <div className="w-6 h-6 rounded-lg bg-amber-400 border-2 border-black flex items-center justify-center shrink-0 text-[10px] font-extrabold text-black">
+                  {(profile?.full_name || user.email || "?")[0].toUpperCase()}
+                </div>
+                <span className="text-xs font-bold text-black truncate max-w-[140px]">
+                  {profile?.full_name || user.email}
+                </span>
+              </div>
+            )}
           </div>
 
           {/* Vista attiva */}
           {vista === "dashboard" ? (
-            <Dashboard progetto={activeProject} />
+            <Dashboard
+              progetto={activeProject}
+              onAggiungiNodo={aggiungiNodo}
+              onEliminaNodo={eliminaNodo}
+              onAggiornaNodo={aggiornaNodo}
+              onSpostaNodo={spostaNodo}
+            />
           ) : vista === "costi" ? (
             <CostiManagement
               progetto={activeProject}
@@ -125,29 +141,25 @@ export default function App() {
               }
             />
           ) : vista === "gantt" ? (
-            <GanttChart progetto={activeProject} />
+            <GanttChart
+              progetto={activeProject}
+              onAggiornaNodo={(nodeId, data) =>
+                aggiornaNodo(activeProject.id, nodeId, data)
+              }
+            />
           ) : (
             <WBSTree
               progetto={activeProject}
               progettoIndex={progettoIndex}
-              onRinominaProgetto={rinominaProgetto}
-              onAggiungiNodo={aggiungiNodo}
-              onEliminaNodo={eliminaNodo}
-              onRinominaNodo={rinominaNodo}
-              onAggiornaNodo={aggiornaNodo}
-              onSpostaNodo={spostaNodo}
-              onSpostaNodoLaterale={spostaNodoLaterale}
-              onPromuoviNodo={promuoviNodo}
-              onDeclassaNodo={declassaNodo}
             />
           )}
         </div>
       ) : (
-        <div className="flex-1 flex items-center justify-center text-gray-400">
-          <div className="text-center">
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-center bg-white border-2 border-black rounded-xl p-10 shadow-[6px_6px_0px_#000]">
             <p className="text-5xl mb-4">📊</p>
-            <p className="text-lg font-medium text-amber-600">WBS Office</p>
-            <p className="text-sm mt-1">
+            <p className="text-xl font-extrabold text-black">WBS Office</p>
+            <p className="text-sm mt-2 font-semibold text-gray-600">
               Seleziona o crea un progetto per iniziare
             </p>
           </div>

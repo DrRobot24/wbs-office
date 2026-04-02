@@ -1,42 +1,30 @@
 import { useState } from "react";
-
-const statiOptions = [
-  { value: "todo", label: "Da fare" },
-  { value: "in-progress", label: "In corso" },
-  { value: "done", label: "Completato" },
-];
-
-const _PRIORITA_OPTIONS = [
-  { value: "bassa", label: "Bassa" },
-  { value: "media", label: "Media" },
-  { value: "alta", label: "Alta" },
-  { value: "urgente", label: "Urgente" },
-];
+import { derivaStato, STATO_BADGE, STATO_LABEL } from "../utils/treeHelpers";
 
 /* ─── Componente riga materiale ─── */
 function MaterialeRow({ mat, index, onChange, onRemove }) {
   return (
-    <div className="flex items-start gap-2 bg-gray-50 rounded-lg p-2.5 border border-gray-200">
+    <div className="flex items-start gap-2 bg-gray-100 rounded-xl p-2.5 border-2 border-black">
       <div className="flex-1 grid grid-cols-2 gap-2">
         <input
           type="text"
           value={mat.descrizione}
           onChange={(e) => onChange(index, "descrizione", e.target.value)}
-          className="bg-gray-50 border border-gray-300 rounded px-2 py-1.5 text-xs text-gray-700 focus:outline-none focus:ring-1 focus:ring-amber-500/50 col-span-2"
+          className="bg-white border-2 border-black rounded-xl px-2 py-1.5 text-xs text-black font-medium focus:outline-none focus:ring-2 focus:ring-amber-400 col-span-2"
           placeholder="Materiale / Articolo"
         />
         <input
           type="text"
           value={mat.quantita}
           onChange={(e) => onChange(index, "quantita", e.target.value)}
-          className="bg-gray-50 border border-gray-300 rounded px-2 py-1.5 text-xs text-gray-700 focus:outline-none focus:ring-1 focus:ring-amber-500/50"
+          className="bg-white border-2 border-black rounded-xl px-2 py-1.5 text-xs text-black font-medium focus:outline-none focus:ring-2 focus:ring-amber-400"
           placeholder="Qtà (es: 50 mq)"
         />
         <input
           type="text"
           value={mat.fornitore}
           onChange={(e) => onChange(index, "fornitore", e.target.value)}
-          className="bg-gray-50 border border-gray-300 rounded px-2 py-1.5 text-xs text-gray-700 focus:outline-none focus:ring-1 focus:ring-amber-500/50"
+          className="bg-white border-2 border-black rounded-xl px-2 py-1.5 text-xs text-black font-medium focus:outline-none focus:ring-2 focus:ring-amber-400"
           placeholder="Fornitore"
         />
         <input
@@ -44,13 +32,13 @@ function MaterialeRow({ mat, index, onChange, onRemove }) {
           step="0.01"
           value={mat.costo}
           onChange={(e) => onChange(index, "costo", e.target.value)}
-          className="bg-gray-50 border border-gray-300 rounded px-2 py-1.5 text-xs text-gray-700 focus:outline-none focus:ring-1 focus:ring-amber-500/50"
+          className="bg-white border-2 border-black rounded-xl px-2 py-1.5 text-xs text-black font-medium focus:outline-none focus:ring-2 focus:ring-amber-400"
           placeholder="Costo €"
         />
         <select
           value={mat.statoOrdine || "da-ordinare"}
           onChange={(e) => onChange(index, "statoOrdine", e.target.value)}
-          className="bg-gray-50 border border-gray-300 rounded px-2 py-1.5 text-xs text-gray-700 focus:outline-none focus:ring-1 focus:ring-amber-500/50"
+          className="bg-white border-2 border-black rounded-xl px-2 py-1.5 text-xs text-black font-medium focus:outline-none focus:ring-2 focus:ring-amber-400"
         >
           <option value="da-ordinare">Da ordinare</option>
           <option value="ordinato">Ordinato</option>
@@ -60,7 +48,7 @@ function MaterialeRow({ mat, index, onChange, onRemove }) {
       </div>
       <button
         onClick={() => onRemove(index)}
-        className="mt-1 w-6 h-6 flex items-center justify-center rounded-full bg-red-500/10 hover:bg-red-500/30 border border-red-500/30 text-red-400 text-xs cursor-pointer shrink-0"
+        className="mt-1 w-6 h-6 flex items-center justify-center rounded-full bg-rose-300 border-2 border-black text-black text-xs font-bold cursor-pointer shrink-0"
         title="Rimuovi"
       >
         ×
@@ -72,26 +60,26 @@ function MaterialeRow({ mat, index, onChange, onRemove }) {
 /* ─── Riga fattura ─── */
 function FatturaRow({ fat, index, onChange, onRemove }) {
   return (
-    <div className="flex items-start gap-2 bg-emerald-50/50 rounded-lg p-2.5 border border-emerald-200">
+    <div className="flex items-start gap-2 bg-lime-100 rounded-xl p-2.5 border-2 border-black">
       <div className="flex-1 grid grid-cols-2 gap-2">
         <input
           type="text"
           value={fat.numero}
           onChange={(e) => onChange(index, "numero", e.target.value)}
-          className="bg-gray-50 border border-gray-300 rounded px-2 py-1.5 text-xs text-gray-700 focus:outline-none focus:ring-1 focus:ring-emerald-500/50"
+          className="bg-white border-2 border-black rounded-xl px-2 py-1.5 text-xs text-black font-medium focus:outline-none focus:ring-2 focus:ring-amber-400"
           placeholder="N° Fattura"
         />
         <input
           type="date"
           value={fat.data}
           onChange={(e) => onChange(index, "data", e.target.value)}
-          className="bg-gray-50 border border-gray-300 rounded px-2 py-1.5 text-xs text-gray-700 focus:outline-none focus:ring-1 focus:ring-emerald-500/50"
+          className="bg-white border-2 border-black rounded-xl px-2 py-1.5 text-xs text-black font-medium focus:outline-none focus:ring-2 focus:ring-amber-400"
         />
         <input
           type="text"
           value={fat.fornitore}
           onChange={(e) => onChange(index, "fornitore", e.target.value)}
-          className="bg-gray-50 border border-gray-300 rounded px-2 py-1.5 text-xs text-gray-700 focus:outline-none focus:ring-1 focus:ring-emerald-500/50"
+          className="bg-white border-2 border-black rounded-xl px-2 py-1.5 text-xs text-black font-medium focus:outline-none focus:ring-2 focus:ring-amber-400"
           placeholder="Fornitore"
         />
         <input
@@ -99,20 +87,20 @@ function FatturaRow({ fat, index, onChange, onRemove }) {
           step="0.01"
           value={fat.importo}
           onChange={(e) => onChange(index, "importo", e.target.value)}
-          className="bg-gray-50 border border-gray-300 rounded px-2 py-1.5 text-xs text-gray-700 focus:outline-none focus:ring-1 focus:ring-emerald-500/50"
+          className="bg-white border-2 border-black rounded-xl px-2 py-1.5 text-xs text-black font-medium focus:outline-none focus:ring-2 focus:ring-amber-400"
           placeholder="Importo €"
         />
         <input
           type="text"
           value={fat.descrizione}
           onChange={(e) => onChange(index, "descrizione", e.target.value)}
-          className="bg-gray-50 border border-gray-300 rounded px-2 py-1.5 text-xs text-gray-700 focus:outline-none focus:ring-1 focus:ring-emerald-500/50 col-span-2"
+          className="bg-white border-2 border-black rounded-xl px-2 py-1.5 text-xs text-black font-medium focus:outline-none focus:ring-2 focus:ring-amber-400 col-span-2"
           placeholder="Descrizione"
         />
       </div>
       <button
         onClick={() => onRemove(index)}
-        className="mt-1 w-6 h-6 flex items-center justify-center rounded-full bg-red-500/10 hover:bg-red-500/30 border border-red-500/30 text-red-400 text-xs cursor-pointer shrink-0"
+        className="mt-1 w-6 h-6 flex items-center justify-center rounded-full bg-rose-300 border-2 border-black text-black text-xs font-bold cursor-pointer shrink-0"
         title="Rimuovi"
       >
         ×
@@ -125,10 +113,10 @@ function FatturaRow({ fat, index, onChange, onRemove }) {
 function Sezione({ titolo, icona, children, defaultOpen = true }) {
   const [aperta, setAperta] = useState(defaultOpen);
   return (
-    <div className="border border-gray-300 rounded-lg overflow-hidden">
+    <div className="border-2 border-black rounded-xl overflow-hidden">
       <button
         onClick={() => setAperta(!aperta)}
-        className="w-full flex items-center gap-2 px-3 py-2 bg-gray-50 hover:bg-gray-100 text-gray-600 text-xs font-semibold cursor-pointer transition-colors"
+        className="w-full flex items-center gap-2 px-3 py-2 bg-gray-100 hover:bg-gray-200 text-black text-xs font-bold cursor-pointer transition-colors"
       >
         <span>{icona}</span>
         <span className="flex-1 text-left">{titolo}</span>
@@ -153,8 +141,8 @@ function Sezione({ titolo, icona, children, defaultOpen = true }) {
 
 /* ─── Input con label ─── */
 const inputCls =
-  "w-full bg-gray-50 border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-amber-500/50 text-sm text-gray-700";
-const labelCls = "block mb-1 text-xs font-medium text-gray-500";
+  "w-full bg-white border-2 border-black rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-amber-400 text-sm text-black font-medium";
+const labelCls = "block mb-1 text-xs font-bold text-black uppercase";
 
 export default function TaskModal({ task, onSave, onDelete, onClose }) {
   const isEdit = !!task?.id;
@@ -270,9 +258,11 @@ export default function TaskModal({ task, onSave, onDelete, onClose }) {
       setTab("generale");
       return;
     }
+    const perc = Math.max(0, Math.min(100, Number(form.percentuale) || 0));
     onSave({
       ...form,
-      percentuale: Math.max(0, Math.min(100, Number(form.percentuale) || 0)),
+      percentuale: perc,
+      stato: derivaStato(perc),
       costoTotale:
         form.costoTotale !== "" ? parseFloat(form.costoTotale) || 0 : "",
       costoReale:
@@ -281,10 +271,10 @@ export default function TaskModal({ task, onSave, onDelete, onClose }) {
   };
 
   const tabCls = (t) =>
-    `px-3 py-1.5 text-xs font-medium rounded-t-lg cursor-pointer transition-colors ${
+    `px-3 py-1.5 text-xs font-bold rounded-t-xl cursor-pointer transition-all ${
       tab === t
-        ? "bg-white text-amber-600 border border-gray-300 border-b-white -mb-px"
-        : "text-gray-400 hover:text-amber-600"
+        ? "bg-amber-400 text-black border-2 border-black border-b-0 -mb-[2px] shadow-[2px_-2px_0px_#000]"
+        : "text-gray-500 hover:text-black border-2 border-transparent"
     }`;
 
   return (
@@ -293,21 +283,21 @@ export default function TaskModal({ task, onSave, onDelete, onClose }) {
       onClick={onClose}
     >
       <div
-        className="bg-white border border-gray-300 rounded-xl shadow-xl w-full max-w-lg mx-4 flex flex-col max-h-[90vh]"
+        className="bg-white border-3 border-black rounded-2xl shadow-[8px_8px_0px_#000] w-full max-w-lg mx-4 flex flex-col max-h-[90vh]"
         onClick={(e) => e.stopPropagation()}
       >
         {/* ── Header ── */}
-        <div className="px-5 pt-5 pb-3 border-b border-gray-300">
-          <h2 className="text-lg font-bold text-amber-600">
+        <div className="px-5 pt-5 pb-3 border-b-2 border-black">
+          <h2 className="text-lg font-extrabold text-black">
             {isEdit ? "✏️ Modifica Elemento" : "➕ Nuovo Elemento"}
           </h2>
-          <p className="text-[11px] text-gray-400 mt-0.5">
+          <p className="text-[11px] text-gray-600 font-semibold mt-0.5">
             Compila le informazioni per questa voce della WBS
           </p>
         </div>
 
         {/* ── Tabs ── */}
-        <div className="shrink-0 bg-gray-50 px-5 flex gap-1 pt-2 border-b border-gray-200">
+        <div className="shrink-0 bg-gray-50 px-5 flex gap-1 pt-2 border-b-2 border-black">
           <button
             className={tabCls("generale")}
             onClick={() => setTab("generale")}
@@ -320,7 +310,7 @@ export default function TaskModal({ task, onSave, onDelete, onClose }) {
           >
             📦 Materiali & Costi
             {form.materiali.length > 0 && (
-              <span className="ml-1.5 bg-amber-100 text-amber-700 text-[10px] font-bold px-1.5 py-0.5 rounded-full">
+              <span className="ml-1.5 bg-amber-400 text-black text-[10px] font-bold px-1.5 py-0.5 rounded-full border border-black">
                 {form.materiali.length}
               </span>
             )}
@@ -389,39 +379,29 @@ export default function TaskModal({ task, onSave, onDelete, onClose }) {
                 </div>
               </div>
 
-              {/* Riga: Stato + Percentuale */}
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className={labelCls}>Stato</label>
-                  <select
-                    value={form.stato}
-                    onChange={(e) => handleChange("stato", e.target.value)}
-                    className={inputCls}
+              {/* Avanzamento % — stato derivato automaticamente */}
+              <div>
+                <label className={labelCls}>Avanzamento %</label>
+                <div className="flex items-center gap-3">
+                  <input
+                    type="range"
+                    min="0"
+                    max="100"
+                    step="10"
+                    value={form.percentuale}
+                    onChange={(e) =>
+                      handleChange("percentuale", Number(e.target.value))
+                    }
+                    className="flex-1 h-2.5 accent-amber-400"
+                  />
+                  <span className="text-black text-sm font-extrabold w-12 text-right">
+                    {form.percentuale}%
+                  </span>
+                  <span
+                    className={`text-[10px] px-2.5 py-1 rounded-full font-bold whitespace-nowrap ${STATO_BADGE[derivaStato(form.percentuale)]}`}
                   >
-                    {statiOptions.map((s) => (
-                      <option key={s.value} value={s.value}>
-                        {s.label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className={labelCls}>Avanzamento %</label>
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="range"
-                      min="0"
-                      max="100"
-                      value={form.percentuale}
-                      onChange={(e) =>
-                        handleChange("percentuale", Number(e.target.value))
-                      }
-                      className="flex-1 h-2 accent-amber-400"
-                    />
-                    <span className="text-amber-600 text-sm font-bold w-10 text-right">
-                      {form.percentuale}%
-                    </span>
-                  </div>
+                    {STATO_LABEL[derivaStato(form.percentuale)]}
+                  </span>
                 </div>
               </div>
             </>
@@ -452,11 +432,11 @@ export default function TaskModal({ task, onSave, onDelete, onClose }) {
                   />
                 </div>
                 {form.materiali.length > 0 && (
-                  <div className="flex items-center justify-between bg-gray-50 rounded-lg px-3 py-2 border border-gray-200">
-                    <span className="text-xs text-gray-400">
+                  <div className="flex items-center justify-between bg-gray-100 rounded-xl px-3 py-2 border-2 border-black">
+                    <span className="text-xs text-gray-700 font-semibold">
                       Totale materiali inseriti:
                     </span>
-                    <span className="text-sm font-bold text-amber-600">
+                    <span className="text-sm font-extrabold text-black">
                       €{" "}
                       {costoMateriali.toLocaleString("it-IT", {
                         minimumFractionDigits: 2,
@@ -490,11 +470,11 @@ export default function TaskModal({ task, onSave, onDelete, onClose }) {
 
                 {/* Riepilogo fatture */}
                 {form.fatture.length > 0 && (
-                  <div className="flex items-center justify-between bg-gray-50 rounded-lg px-3 py-2 border border-gray-200">
-                    <span className="text-xs text-gray-400">
+                  <div className="flex items-center justify-between bg-gray-100 rounded-xl px-3 py-2 border-2 border-black">
+                    <span className="text-xs text-gray-700 font-semibold">
                       Totale fatture inserite:
                     </span>
-                    <span className="text-sm font-bold text-emerald-600">
+                    <span className="text-sm font-extrabold text-black">
                       €{" "}
                       {costoFatture.toLocaleString("it-IT", {
                         minimumFractionDigits: 2,
@@ -506,22 +486,22 @@ export default function TaskModal({ task, onSave, onDelete, onClose }) {
                 {/* Delta preventivo vs reale */}
                 {form.costoTotale !== "" && form.costoReale !== "" && (
                   <div
-                    className={`flex items-center justify-between rounded-lg px-3 py-2 border ${
+                    className={`flex items-center justify-between rounded-xl px-3 py-2 border-2 border-black ${
                       (parseFloat(form.costoReale) || 0) >
                       (parseFloat(form.costoTotale) || 0)
-                        ? "bg-red-50 border-red-200"
-                        : "bg-emerald-50 border-emerald-200"
+                        ? "bg-rose-200"
+                        : "bg-lime-200"
                     }`}
                   >
-                    <span className="text-xs text-gray-500">
+                    <span className="text-xs text-black font-bold">
                       Scostamento:
                     </span>
                     <span
-                      className={`text-sm font-bold ${
+                      className={`text-sm font-extrabold ${
                         (parseFloat(form.costoReale) || 0) >
                         (parseFloat(form.costoTotale) || 0)
-                          ? "text-red-600"
-                          : "text-emerald-600"
+                          ? "text-black"
+                          : "text-black"
                       }`}
                     >
                       {(parseFloat(form.costoReale) || 0) >
@@ -558,7 +538,7 @@ export default function TaskModal({ task, onSave, onDelete, onClose }) {
                 </div>
                 <button
                   onClick={aggiungiFattura}
-                  className="w-full py-2 text-xs font-semibold text-emerald-600 bg-emerald-500/10 hover:bg-emerald-500/20 border border-dashed border-gray-300 rounded-lg cursor-pointer transition-colors"
+                  className="w-full py-2 text-xs font-bold text-black bg-lime-300 hover:translate-y-[1px] hover:shadow-none border-2 border-dashed border-black rounded-xl cursor-pointer transition-all shadow-[2px_2px_0px_#000]"
                 >
                   + Aggiungi fattura
                 </button>
@@ -588,7 +568,7 @@ export default function TaskModal({ task, onSave, onDelete, onClose }) {
                 </div>
                 <button
                   onClick={aggiungiMateriale}
-                  className="w-full py-2 text-xs font-semibold text-amber-600 bg-amber-500/10 hover:bg-amber-500/20 border border-dashed border-gray-300 rounded-lg cursor-pointer transition-colors"
+                  className="w-full py-2 text-xs font-bold text-black bg-amber-400 hover:translate-y-[1px] hover:shadow-none border-2 border-dashed border-black rounded-xl cursor-pointer transition-all shadow-[2px_2px_0px_#000]"
                 >
                   + Aggiungi materiale
                 </button>
@@ -609,7 +589,7 @@ export default function TaskModal({ task, onSave, onDelete, onClose }) {
                     "Appunti, promemoria, specifiche tecniche, riferimenti normativi...\n\nEs:\n- Verificare conformità normativa impianti\n- Contattare geom. Rossi per rilievi\n- Attesa conferma preventivo fornitore XY"
                   }
                 />
-                <p className="text-[10px] text-gray-300 mt-1 text-right">
+                <p className="text-[10px] text-gray-600 font-semibold mt-1 text-right">
                   {form.note.length} caratteri
                 </p>
               </div>
@@ -618,12 +598,12 @@ export default function TaskModal({ task, onSave, onDelete, onClose }) {
         </div>
 
         {/* ── Footer ── */}
-        <div className="shrink-0 px-5 py-3 border-t border-gray-300 flex items-center justify-between bg-gray-50 rounded-b-xl">
+        <div className="shrink-0 px-5 py-3 border-t-2 border-black flex items-center justify-between bg-gray-100 rounded-b-2xl">
           <div>
             {isEdit && (
               <button
                 onClick={onDelete}
-                className="text-sm text-red-400 hover:text-red-300 font-medium cursor-pointer"
+                className="text-sm text-black font-bold bg-rose-300 px-3 py-1.5 rounded-xl border-2 border-black shadow-[2px_2px_0px_#000] hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-none cursor-pointer transition-all"
               >
                 🗑 Elimina
               </button>
@@ -632,13 +612,13 @@ export default function TaskModal({ task, onSave, onDelete, onClose }) {
           <div className="flex gap-2">
             <button
               onClick={onClose}
-              className="px-4 py-2 text-sm rounded-lg bg-gray-200 hover:bg-gray-300 text-gray-400 hover:text-amber-600 border border-gray-300 cursor-pointer"
+              className="px-4 py-2 text-sm rounded-xl bg-white text-black font-bold border-2 border-black shadow-[3px_3px_0px_#000] hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-[1px_1px_0px_#000] cursor-pointer transition-all"
             >
               Annulla
             </button>
             <button
               onClick={handleSave}
-              className="px-5 py-2 text-sm rounded-lg bg-amber-500/20 hover:bg-amber-500/30 border border-gray-1000 text-amber-600 font-semibold cursor-pointer"
+              className="px-5 py-2 text-sm rounded-xl bg-amber-400 text-black font-extrabold border-2 border-black shadow-[3px_3px_0px_#000] hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-[1px_1px_0px_#000] cursor-pointer transition-all"
             >
               💾 Salva
             </button>

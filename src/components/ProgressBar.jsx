@@ -1,16 +1,16 @@
 export default function ProgressBar({ percentuale = 0, altezza = "h-3" }) {
   const colore =
     percentuale >= 100
-      ? "bg-green-500"
+      ? "bg-lime-400"
       : percentuale >= 50
-        ? "bg-yellow-500"
+        ? "bg-yellow-400"
         : percentuale > 0
-          ? "bg-red-500"
-          : "bg-gray-400";
+          ? "bg-rose-400"
+          : "bg-gray-300";
 
   return (
     <div
-      className={`w-full bg-gray-200 rounded-full ${altezza} overflow-hidden`}
+      className={`w-full bg-gray-200 border-2 border-black rounded-full ${altezza} overflow-hidden`}
     >
       <div
         className={`${colore} ${altezza} rounded-full transition-all duration-300`}

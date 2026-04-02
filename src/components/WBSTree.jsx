@@ -1,125 +1,44 @@
 import { useState, useRef, Children } from "react";
 import { toPng } from "html-to-image";
 import jsPDF from "jspdf";
-import TaskModal from "./TaskModal";
+import { calcolaStatoNodo, STATO_BADGE, STATO_LABEL } from "../utils/treeHelpers";
 
-/* ─── Priority colors ─── */
-const PRIORITA_COLORI = {
-  urgente: "bg-red-500/20 text-red-400 border-red-500/40",
-  alta: "bg-orange-500/15 text-orange-400 border-orange-500/30",
-  media: "bg-amber-500/10 text-amber-400/50 border-amber-500/20",
-  bassa: "bg-slate-500/10 text-slate-400 border-slate-500/20",
-};
-
-/* ─── Semaforo: stato ricorsivo del nodo ─── */
+/* ─── Semaforo: bordi per nodo ─── */
 const STATO_BORDER = {
-  todo: "border-red-300 shadow-red-100 hover:border-red-400",
-  "in-progress": "border-yellow-300 shadow-yellow-100 hover:border-yellow-400",
-  done: "border-green-300 shadow-green-100 hover:border-green-400",
-};
-const STATO_BADGE = {
-  todo: "bg-red-100 text-red-600 border-red-200",
-  "in-progress": "bg-yellow-100 text-yellow-700 border-yellow-200",
-  done: "bg-green-100 text-green-600 border-green-200",
-};
-const STATO_LABEL = {
-  todo: "Da fare",
-  "in-progress": "In corso",
-  done: "Completato",
+  todo: "border-black",
+  "in-progress": "border-black",
+  done: "border-black",
 };
 
-function calcolaStatoNodo(nodo) {
-  if (!nodo.children || nodo.children.length === 0) return nodo.stato || "todo";
-  const foglie = raccogliFoglie(nodo);
-  if (foglie.every((f) => f.stato === "done")) return "done";
-  if (foglie.some((f) => f.stato === "in-progress" || f.stato === "done"))
-    return "in-progress";
-  return "todo";
-}
-function raccogliFoglie(nodo) {
-  if (!nodo.children || nodo.children.length === 0) return [nodo];
-  return nodo.children.flatMap(raccogliFoglie);
-}
-
-/* ─── Recursive Tree Node ─── */
+/* ─── Recursive Tree Node (read-only) ─── */
 function TreeNode({
   wbsCode,
   titolo,
   nodo,
-  onAdd,
-  onEdit,
-  onDelete,
-  onRename,
-  onMoveUp,
-  onMoveDown,
-  onMoveLeft,
-  onMoveRight,
-  onPromote,
-  onDemote,
   children: childElements,
 }) {
   const [expanded, setExpanded] = useState(true);
-  const [editing, setEditing] = useState(false);
-  const [titleTemp, setTitleTemp] = useState(titolo);
 
   const childArray = Children.toArray(childElements);
   const hasChildren = childArray.length > 0;
   const statoNodo = nodo ? calcolaStatoNodo(nodo) : "todo";
 
-  const handleSave = () => {
-    if (titleTemp.trim() && onRename) {
-      onRename(titleTemp.trim());
-    } else {
-      setTitleTemp(titolo);
-    }
-    setEditing(false);
-  };
-
   return (
     <div className="flex flex-col items-center">
       {/* ── Node Card ── */}
       <div
-        className={`wbs-node-card relative border-2 rounded-lg px-5 py-3 min-w-[170px] max-w-[240px] bg-white text-center shadow-md transition-all select-none ${STATO_BORDER[statoNodo] || STATO_BORDER["todo"]}`}
+        className={`wbs-node-card relative border-2 rounded-xl px-5 py-3 min-w-[170px] max-w-[240px] bg-white text-center shadow-[4px_4px_0px_#000] transition-all select-none ${STATO_BORDER[statoNodo] || STATO_BORDER["todo"]}`}
       >
-        <div className="text-amber-600 font-bold text-sm">{wbsCode}</div>
+        <div className="text-black font-extrabold text-sm">{wbsCode}</div>
+        <div className="text-gray-700 text-xs font-bold mt-1 leading-relaxed">
+          {titolo}
+        </div>
 
-        {editing ? (
-          <input
-            value={titleTemp}
-            onChange={(e) => setTitleTemp(e.target.value)}
-            onBlur={handleSave}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") handleSave();
-              if (e.key === "Escape") {
-                setTitleTemp(titolo);
-                setEditing(false);
-              }
-            }}
-            className="w-full bg-gray-100 border border-gray-300 rounded px-2 py-1 text-xs text-gray-700 focus:outline-none focus:ring-1 focus:ring-amber-400 text-center mt-1"
-            autoFocus
-            onClick={(e) => e.stopPropagation()}
-          />
-        ) : (
-          <div
-            className="text-gray-600 text-xs font-medium mt-1 leading-relaxed"
-            onDoubleClick={(e) => {
-              e.stopPropagation();
-              if (onRename) {
-                setTitleTemp(titolo);
-                setEditing(true);
-              }
-            }}
-            title={onRename ? "Doppio click per rinominare" : ""}
-          >
-            {titolo}
-          </div>
-        )}
-
-        {/* Status badge (semaforo) */}
+        {/* Status badge */}
         {nodo && (
           <div className="flex justify-center mt-1.5">
             <span
-              className={`text-[9px] px-2 py-0.5 rounded-full border font-semibold ${STATO_BADGE[statoNodo] || STATO_BADGE["todo"]}`}
+              className={`text-[9px] px-2 py-0.5 rounded-full font-bold ${STATO_BADGE[statoNodo] || STATO_BADGE["todo"]}`}
             >
               {statoNodo === "done"
                 ? "✅"
@@ -134,283 +53,30 @@ function TreeNode({
         {/* Info badges */}
         {nodo && (
           <div className="flex flex-wrap justify-center gap-1 mt-1.5">
-            {nodo.priorita && nodo.priorita !== "media" && (
-              <span
-                className={`text-[9px] px-1.5 py-0.5 rounded-full border ${PRIORITA_COLORI[nodo.priorita] || ""}`}
-              >
-                {nodo.priorita === "urgente"
-                  ? "🔴"
-                  : nodo.priorita === "alta"
-                    ? "🟠"
-                    : "🟢"}{" "}
-                {nodo.priorita}
+            {nodo.percentuale > 0 && (
+              <span className="text-[9px] px-1.5 py-0.5 rounded-full border-2 border-black bg-amber-200 text-black font-bold">
+                {nodo.percentuale}%
               </span>
             )}
             {nodo.materiali && nodo.materiali.length > 0 && (
-              <span className="text-[9px] px-1.5 py-0.5 rounded-full border bg-blue-50 text-blue-600 border-blue-200">
+              <span className="text-[9px] px-1.5 py-0.5 rounded-full border-2 border-black bg-sky-200 text-black font-bold">
                 📦 {nodo.materiali.length}
               </span>
             )}
             {nodo.costoTotale !== "" &&
               nodo.costoTotale !== undefined &&
               nodo.costoTotale > 0 && (
-                <span className="text-[9px] px-1.5 py-0.5 rounded-full border bg-emerald-50 text-emerald-600 border-emerald-200">
+                <span className="text-[9px] px-1.5 py-0.5 rounded-full border-2 border-black bg-lime-200 text-black font-bold">
                   💰 €{Number(nodo.costoTotale).toLocaleString("it-IT")}
                 </span>
               )}
             {nodo.note && (
               <span
-                className="text-[9px] px-1.5 py-0.5 rounded-full border bg-violet-50 text-violet-600 border-violet-200"
+                className="text-[9px] px-1.5 py-0.5 rounded-full border-2 border-black bg-violet-200 text-black font-bold"
                 title={nodo.note}
               >
                 📝
               </span>
-            )}
-          </div>
-        )}
-
-        {/* Action Buttons */}
-        <div className="flex justify-center items-center gap-1.5 mt-2.5">
-          {onAdd && (
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                onAdd();
-              }}
-              className="text-[10px] px-2.5 py-1 bg-amber-100 hover:bg-amber-200 border border-amber-300 rounded-full text-amber-700 font-semibold transition-colors cursor-pointer whitespace-nowrap"
-            >
-              + Figlio
-            </button>
-          )}
-          {onEdit && (
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                onEdit();
-              }}
-              className="w-7 h-7 flex items-center justify-center bg-amber-100 hover:bg-amber-200 border border-amber-300 rounded-full text-amber-600 transition-colors cursor-pointer"
-              title="Modifica"
-            >
-              <svg
-                className="w-3.5 h-3.5"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-                />
-              </svg>
-            </button>
-          )}
-          {!onEdit && onRename && (
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                setTitleTemp(titolo);
-                setEditing(true);
-              }}
-              className="w-7 h-7 flex items-center justify-center bg-amber-100 hover:bg-amber-200 border border-amber-300 rounded-full text-amber-600 transition-colors cursor-pointer"
-              title="Rinomina"
-            >
-              <svg
-                className="w-3.5 h-3.5"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-                />
-              </svg>
-            </button>
-          )}
-          {onDelete && (
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                onDelete();
-              }}
-              className="w-7 h-7 flex items-center justify-center bg-red-50 hover:bg-red-100 border border-red-200 rounded-full text-red-500 transition-colors cursor-pointer"
-              title="Elimina"
-            >
-              <svg
-                className="w-3.5 h-3.5"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                />
-              </svg>
-            </button>
-          )}
-        </div>
-
-        {/* Move Buttons — reorder among siblings */}
-        {(onMoveUp || onMoveDown || onMoveLeft || onMoveRight) && (
-          <div className="flex justify-center items-center gap-1 mt-1.5">
-            {onMoveLeft && (
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onMoveLeft();
-                }}
-                className="w-6 h-6 flex items-center justify-center bg-sky-50 hover:bg-sky-100 border border-sky-200 rounded-full text-sky-600 transition-colors cursor-pointer"
-                title="Sposta a sinistra (tra fratelli)"
-              >
-                <svg
-                  className="w-3 h-3"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2.5}
-                    d="M15 19l-7-7 7-7"
-                  />
-                </svg>
-              </button>
-            )}
-            {onMoveUp && (
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onMoveUp();
-                }}
-                className="w-6 h-6 flex items-center justify-center bg-sky-50 hover:bg-sky-100 border border-sky-200 rounded-full text-sky-600 transition-colors cursor-pointer"
-                title="Sposta su (tra fratelli)"
-              >
-                <svg
-                  className="w-3 h-3"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2.5}
-                    d="M5 15l7-7 7 7"
-                  />
-                </svg>
-              </button>
-            )}
-            {onMoveDown && (
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onMoveDown();
-                }}
-                className="w-6 h-6 flex items-center justify-center bg-sky-50 hover:bg-sky-100 border border-sky-200 rounded-full text-sky-600 transition-colors cursor-pointer"
-                title="Sposta giù (tra fratelli)"
-              >
-                <svg
-                  className="w-3 h-3"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2.5}
-                    d="M19 9l-7 7-7-7"
-                  />
-                </svg>
-              </button>
-            )}
-            {onMoveRight && (
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onMoveRight();
-                }}
-                className="w-6 h-6 flex items-center justify-center bg-sky-50 hover:bg-sky-100 border border-sky-200 rounded-full text-sky-600 transition-colors cursor-pointer"
-                title="Sposta a destra (tra fratelli)"
-              >
-                <svg
-                  className="w-3 h-3"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2.5}
-                    d="M9 5l7 7-7 7"
-                  />
-                </svg>
-              </button>
-            )}
-          </div>
-        )}
-
-        {/* Promote / Demote — change hierarchy level */}
-        {(onPromote || onDemote) && (
-          <div className="flex justify-center items-center gap-1 mt-1">
-            {onPromote && (
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onPromote();
-                }}
-                className="h-5 flex items-center gap-0.5 px-1.5 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-full text-emerald-600 transition-colors cursor-pointer"
-                title="Promuovi (sali di livello)"
-              >
-                <svg
-                  className="w-3 h-3"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2.5}
-                    d="M5 15l7-7 7 7"
-                  />
-                </svg>
-                <span className="text-[8px] font-bold">LIV</span>
-              </button>
-            )}
-            {onDemote && (
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onDemote();
-                }}
-                className="h-5 flex items-center gap-0.5 px-1.5 bg-violet-50 hover:bg-violet-100 border border-violet-200 rounded-full text-violet-600 transition-colors cursor-pointer"
-                title="Declassa (scendi di livello)"
-              >
-                <svg
-                  className="w-3 h-3"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2.5}
-                    d="M19 9l-7 7-7-7"
-                  />
-                </svg>
-                <span className="text-[8px] font-bold">LIV</span>
-              </button>
             )}
           </div>
         )}
@@ -422,7 +88,7 @@ function TreeNode({
               e.stopPropagation();
               setExpanded(!expanded);
             }}
-            className="absolute -bottom-3.5 left-1/2 -translate-x-1/2 w-6 h-6 rounded-full bg-white border border-amber-300 flex items-center justify-center text-amber-600 hover:bg-amber-50 transition-colors cursor-pointer z-10"
+            className="absolute -bottom-3.5 left-1/2 -translate-x-1/2 w-6 h-6 rounded-full bg-white border-2 border-black flex items-center justify-center text-black hover:bg-amber-400 transition-colors cursor-pointer z-10 shadow-[2px_2px_0px_#000]"
             title={expanded ? "Comprimi" : "Espandi"}
           >
             <svg
@@ -446,7 +112,7 @@ function TreeNode({
       {hasChildren && expanded && (
         <div className="flex flex-col items-center">
           {/* Vertical line: parent → horizontal bar */}
-          <div className="w-px h-10 bg-amber-300" />
+          <div className="w-px h-10 bg-black" />
 
           {/* Row of children */}
           <div className="flex items-start wbs-children-row">
@@ -466,20 +132,7 @@ function TreeNode({
 }
 
 /* ─── Main WBSTree component ─── */
-export default function WBSTree({
-  progetto,
-  progettoIndex,
-  onRinominaProgetto,
-  onAggiungiNodo,
-  onEliminaNodo,
-  onRinominaNodo,
-  onAggiornaNodo,
-  onSpostaNodo,
-  onSpostaNodoLaterale,
-  onPromuoviNodo,
-  onDeclassaNodo,
-}) {
-  const [modal, setModal] = useState(null);
+export default function WBSTree({ progetto, progettoIndex }) {
   const containerRef = useRef(null);
   const treeRef = useRef(null);
   const [isPanning, setIsPanning] = useState(false);
@@ -740,32 +393,11 @@ export default function WBSTree({
 
   const handleMouseUp = () => setIsPanning(false);
 
-  /* ── Node modal callbacks ── */
-  const handleNodeSave = (nodeData) => {
-    if (modal.node) {
-      // Editing existing node
-      onAggiornaNodo(progetto.id, modal.node.id, nodeData);
-    } else {
-      // Adding new child to parentId
-      onAggiungiNodo(progetto.id, modal.parentId, nodeData);
-    }
-    setModal(null);
-  };
-
-  const handleNodeDelete = () => {
-    if (modal?.node) {
-      onEliminaNodo(progetto.id, modal.node.id);
-    }
-    setModal(null);
-  };
-
   const rootCode = `${progettoIndex + 1}`;
 
   /* ── Recursive node renderer ── */
   function renderNodo(nodo, index, siblings, parentCode, depth = 1) {
     const code = `${parentCode}.${index + 1}`;
-    const hasSiblings = siblings.length > 1;
-    const isTopLevel = depth === 1; // direct child of root
 
     return (
       <TreeNode
@@ -773,32 +405,6 @@ export default function WBSTree({
         wbsCode={code}
         titolo={nodo.titolo}
         nodo={nodo}
-        onAdd={() => onAggiungiNodo(progetto.id, nodo.id, {})}
-        onEdit={() => setModal({ parentId: null, node: nodo })}
-        onRename={(t) => onRinominaNodo(progetto.id, nodo.id, t)}
-        onDelete={() => onEliminaNodo(progetto.id, nodo.id)}
-        onMoveUp={
-          index > 0 ? () => onSpostaNodo(progetto.id, nodo.id, -1) : null
-        }
-        onMoveDown={
-          index < siblings.length - 1
-            ? () => onSpostaNodo(progetto.id, nodo.id, 1)
-            : null
-        }
-        onMoveLeft={
-          hasSiblings && index > 0
-            ? () => onSpostaNodoLaterale(progetto.id, nodo.id, -1)
-            : null
-        }
-        onMoveRight={
-          hasSiblings && index < siblings.length - 1
-            ? () => onSpostaNodoLaterale(progetto.id, nodo.id, 1)
-            : null
-        }
-        onPromote={
-          !isTopLevel ? () => onPromuoviNodo(progetto.id, nodo.id) : null
-        }
-        onDemote={index > 0 ? () => onDeclassaNodo(progetto.id, nodo.id) : null}
       >
         {(nodo.children || []).map((child, ci) =>
           renderNodo(child, ci, nodo.children, code, depth + 1),
@@ -808,22 +414,22 @@ export default function WBSTree({
   }
 
   return (
-    <div className="flex-1 flex flex-col overflow-hidden bg-gray-50">
+    <div className="flex-1 flex flex-col overflow-hidden bg-gray-100">
       {/* ── Header bar ── */}
-      <div className="shrink-0 px-6 py-3 bg-white border-b border-gray-300 flex items-center gap-4">
-        <div className="w-10 h-10 rounded-full bg-amber-100 border-2 border-amber-400 flex items-center justify-center shrink-0">
-          <span className="text-amber-700 font-bold text-sm">WB</span>
+      <div className="shrink-0 px-6 py-3 bg-white border-b-2 border-black flex items-center gap-4">
+        <div className="w-10 h-10 rounded-xl bg-sky-300 border-2 border-black flex items-center justify-center shrink-0 shadow-[2px_2px_0px_#000]">
+          <span className="text-black font-extrabold text-sm">WB</span>
         </div>
         <div className="flex-1">
-          <h1 className="text-amber-600 font-bold text-lg">WBS Interattiva</h1>
-          <p className="text-gray-400 text-xs">
-            Work Breakdown Structure | Gerarchia libera a livelli infiniti
+          <h1 className="text-black font-extrabold text-lg">Diagramma WBS</h1>
+          <p className="text-gray-600 text-xs font-semibold">
+            Work Breakdown Structure | Visualizzazione in sola lettura
           </p>
         </div>
         <select
           value={formatoPDF}
           onChange={(e) => setFormatoPDF(e.target.value)}
-          className="h-9 px-2 bg-gray-50 border border-gray-300 rounded-lg text-xs text-gray-600 cursor-pointer focus:outline-none focus:ring-1 focus:ring-red-300"
+          className="h-9 px-2 bg-white border-2 border-black rounded-xl text-xs text-black font-bold cursor-pointer focus:outline-none focus:ring-2 focus:ring-amber-400"
           title="Formato carta PDF"
         >
           <option value="a4">A4</option>
@@ -832,7 +438,7 @@ export default function WBSTree({
         <button
           onClick={handleExportTreePDF}
           disabled={exporting}
-          className="flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 disabled:opacity-50 disabled:cursor-wait border border-red-500 rounded-lg text-white text-sm font-semibold transition-colors cursor-pointer shadow-md"
+          className="flex items-center gap-2 px-4 py-2 bg-rose-300 hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-none disabled:opacity-50 disabled:cursor-wait border-2 border-black rounded-xl text-black text-sm font-bold transition-all cursor-pointer shadow-[3px_3px_0px_#000]"
           title="Esporta l'albero WBS come PDF visuale"
         >
           <svg
@@ -852,78 +458,9 @@ export default function WBSTree({
         </button>
       </div>
 
-      <p className="shrink-0 text-center text-gray-400 text-[11px] py-2 bg-gray-50 border-b border-gray-300">
-        Trascina lo sfondo per navigare. Doppio click sui nomi per rinominare.
-        Frecce azzurre = riordina tra fratelli. Frecce verdi/viola con LIV =
-        cambia livello gerarchico.
+      <p className="shrink-0 text-center text-gray-700 text-[11px] py-2 bg-white border-b-2 border-black font-bold">
+        Trascina lo sfondo per navigare · Clicca sui nodi per espandere/comprimere · Per modificare, usa la Dashboard
       </p>
-
-      {/* ── Legenda comandi ── */}
-      <div className="shrink-0 bg-gray-100 border-b border-gray-300 px-6 py-2 flex flex-wrap items-center justify-center gap-x-5 gap-y-1.5 text-[10px]">
-        <span className="text-gray-500 font-semibold mr-1">LEGENDA:</span>
-
-        <span className="flex items-center gap-1">
-          <span className="inline-block w-5 h-5 rounded-full bg-amber-100 border border-amber-300 text-amber-700 text-center leading-5 text-[9px] font-bold">
-            +
-          </span>
-          <span className="text-gray-500">Aggiungi figlio</span>
-        </span>
-
-        <span className="flex items-center gap-1">
-          <span className="inline-block w-5 h-5 rounded-full bg-amber-100 border border-amber-300 text-amber-600 text-center leading-5">
-            ✏
-          </span>
-          <span className="text-gray-500">
-            Modifica scheda (note, materiali, costi…)
-          </span>
-        </span>
-
-        <span className="flex items-center gap-1">
-          <span className="inline-block w-5 h-5 rounded-full bg-red-50 border border-red-200 text-red-500 text-center leading-5">
-            🗑
-          </span>
-          <span className="text-gray-500">Elimina nodo</span>
-        </span>
-
-        <span className="flex items-center gap-1">
-          <span className="inline-flex gap-0.5">
-            <span className="inline-block w-4 h-4 rounded-full bg-sky-50 border border-sky-200 text-sky-600 text-center leading-4 text-[8px]">
-              ↑
-            </span>
-            <span className="inline-block w-4 h-4 rounded-full bg-sky-50 border border-sky-200 text-sky-600 text-center leading-4 text-[8px]">
-              ↓
-            </span>
-            <span className="inline-block w-4 h-4 rounded-full bg-sky-50 border border-sky-200 text-sky-600 text-center leading-4 text-[8px]">
-              ←
-            </span>
-            <span className="inline-block w-4 h-4 rounded-full bg-sky-50 border border-sky-200 text-sky-600 text-center leading-4 text-[8px]">
-              →
-            </span>
-          </span>
-          <span className="text-gray-500">Riordina nello stesso livello</span>
-        </span>
-
-        <span className="flex items-center gap-1">
-          <span className="inline-flex gap-0.5">
-            <span className="inline-block h-4 px-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-600 text-center leading-4 text-[8px] font-bold">
-              ↑LIV
-            </span>
-            <span className="inline-block h-4 px-1 rounded-full bg-violet-50 border border-violet-200 text-violet-600 text-center leading-4 text-[8px] font-bold">
-              ↓LIV
-            </span>
-          </span>
-          <span className="text-gray-500">
-            Promuovi / Declassa livello gerarchico
-          </span>
-        </span>
-
-        <span className="flex items-center gap-1">
-          <span className="text-amber-600">Aa</span>
-          <span className="text-gray-500">
-            Doppio click sul nome → rinomina
-          </span>
-        </span>
-      </div>
 
       {/* ── Pannable / scrollable tree canvas ── */}
       <div
@@ -943,9 +480,6 @@ export default function WBSTree({
             wbsCode={rootCode}
             titolo={progetto.titolo}
             nodo={progetto}
-            onAdd={() => onAggiungiNodo(progetto.id, progetto.id, {})}
-            onEdit={() => setModal({ parentId: null, node: progetto })}
-            onRename={(t) => onRinominaProgetto(progetto.id, t)}
           >
             {(progetto.children || []).map((nodo, i) =>
               renderNodo(nodo, i, progetto.children, rootCode),
@@ -954,15 +488,6 @@ export default function WBSTree({
         </div>
       </div>
 
-      {/* ── Node Modal ── */}
-      {modal && (
-        <TaskModal
-          task={modal.node}
-          onSave={handleNodeSave}
-          onDelete={handleNodeDelete}
-          onClose={() => setModal(null)}
-        />
-      )}
     </div>
   );
 }

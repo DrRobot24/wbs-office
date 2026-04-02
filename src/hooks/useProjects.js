@@ -8,16 +8,6 @@ const STORAGE_KEY = "wbs-projects";
 /* ─── Helpers ricorsivi per navigare/modificare l'albero ─── */
 
 /** Trova il nodo con l'id dato e il suo genitore, ricorsivamente */
-function _trovaNodo(nodo, id) {
-  if (nodo.id === id) return nodo;
-  if (!nodo.children) return null;
-  for (const child of nodo.children) {
-    const found = _trovaNodo(child, id);
-    if (found) return found;
-  }
-  return null;
-}
-
 /** Applica una funzione di trasformazione al nodo con l'id dato (ricorsivo, immutabile) */
 function mapNodo(nodo, id, fn) {
   if (nodo.id === id) return fn(nodo);
@@ -142,67 +132,6 @@ function declassa(progetto, nodeId) {
     children: [...(f.children || []), nodo],
   }));
   return result;
-}
-
-/** Progetto demo precaricato */
-function _creaProgettoDemo() {
-  return {
-    id: uuidv4(),
-    titolo: "Progetto Demo",
-    percentuale: 0,
-    children: [
-      {
-        id: uuidv4(),
-        titolo: "Progettazione",
-        percentuale: 0,
-        children: [
-          {
-            id: uuidv4(),
-            titolo: "Analisi requisiti",
-            responsabile: "Mario Rossi",
-            dataScadenza: "2026-03-15",
-            stato: "done",
-            percentuale: 100,
-            children: [],
-          },
-          {
-            id: uuidv4(),
-            titolo: "Definizione architettura",
-            responsabile: "Laura Bianchi",
-            dataScadenza: "2026-03-20",
-            stato: "in-progress",
-            percentuale: 60,
-            children: [],
-          },
-        ],
-      },
-      {
-        id: uuidv4(),
-        titolo: "Sviluppo",
-        percentuale: 0,
-        children: [
-          {
-            id: uuidv4(),
-            titolo: "Implementazione frontend",
-            responsabile: "Giulia Verdi",
-            dataScadenza: "2026-04-10",
-            stato: "in-progress",
-            percentuale: 40,
-            children: [],
-          },
-          {
-            id: uuidv4(),
-            titolo: "Implementazione backend",
-            responsabile: "Andrea Neri",
-            dataScadenza: "2026-04-20",
-            stato: "todo",
-            percentuale: 0,
-            children: [],
-          },
-        ],
-      },
-    ],
-  };
 }
 
 function caricaDaStorage() {

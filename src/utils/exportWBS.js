@@ -1,6 +1,7 @@
 import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
+import { derivaStato } from "./treeHelpers";
 
 const STATI_LABEL = {
   todo: "Da fare",
@@ -53,7 +54,7 @@ function buildRows(progetto) {
       priorita: PRIORITA_LABEL[nodo.priorita] || "",
       dataInizio: nodo.dataInizio || "—",
       scadenza: nodo.dataScadenza || "—",
-      stato: isLeaf ? STATI_LABEL[nodo.stato] || nodo.stato || "" : "",
+      stato: isLeaf ? STATI_LABEL[derivaStato(nodo.percentuale)] || "" : "",
       percentuale: `${nodo.percentuale}%`,
       costoTotale:
         nodo.costoTotale !== "" && nodo.costoTotale !== undefined
