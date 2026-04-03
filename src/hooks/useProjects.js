@@ -345,6 +345,13 @@ export function useProjects() {
     );
   }, []);
 
+  /** Sostituisce un intero progetto con uno snapshot (usato per undo) */
+  const replaceProgetto = useCallback((progettoId, snapshot) => {
+    setProjects((prev) =>
+      prev.map((p) => (p.id === progettoId ? snapshot : p)),
+    );
+  }, []);
+
   // --- Export / Import ---
   const esportaJSON = useCallback(() => {
     const blob = new Blob([JSON.stringify(projects, null, 2)], {
@@ -393,6 +400,7 @@ export function useProjects() {
     spostaNodoLaterale,
     promuoviNodo,
     declassaNodo,
+    replaceProgetto,
     esportaJSON,
     importaJSON,
   };

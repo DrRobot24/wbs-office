@@ -1,21 +1,38 @@
-import { useState, useRef, Children } from "react";
+import { useState, useRef, Children, useCallback } from "react";
 import { toPng } from "html-to-image";
 import jsPDF from "jspdf";
 import { calcolaStatoNodo, STATO_BADGE, STATO_LABEL } from "../utils/treeHelpers";
+import TaskModal from "./TaskModal";
 
-/* ─── Semaforo: bordi per nodo ─── */
+/* ─── Semaforo: colori per nodo ─── */
 const STATO_BORDER = {
-  todo: "border-black",
-  "in-progress": "border-black",
-  done: "border-black",
+  todo: "border-red-500",
+  "in-progress": "border-yellow-500",
+  done: "border-green-500",
 };
 
-/* ─── Recursive Tree Node (read-only) ─── */
+const STATO_BG = {
+  todo: "bg-red-100",
+  "in-progress": "bg-yellow-100",
+  done: "bg-lime-100",
+};
+
+/* ─── Recursive Tree Node ─── */
 function TreeNode({
   wbsCode,
   titolo,
   nodo,
   children: childElements,
+  onEdit,
+  onAdd,
+  onDelete,
+  onMoveUp,
+  onMoveDown,
+  onPromuovi,
+  onDeclassa,
+  isFirst,
+  isLast,
+  isRoot,
 }) {
   const [expanded, setExpanded] = useState(true);
 
@@ -23,11 +40,76 @@ function TreeNode({
   const hasChildren = childArray.length > 0;
   const statoNodo = nodo ? calcolaStatoNodo(nodo) : "todo";
 
+  /* ── Root card style ── */
+  if (isRoot) {
+    return (
+      <div className="flex flex-col items-center">
+        <div className="wbs-node-card group relative border-4 border-black rounded-2xl px-6 py-4 min-w-[200px] max-w-[280px] bg-white text-center shadow-[6px_6px_0px_#000] select-none">
+          {/* Crown icon */}
+          <div className="text-base mb-1">🏗️</div>
+          <div className="text-black font-extrabold text-base tracking-wide">{wbsCode}</div>
+          <div className="text-black text-sm font-extrabold mt-1 leading-snug">{titolo}</div>
+          {/* Progress */}
+          {nodo && (
+            <div className="mt-2 flex flex-col items-center gap-1">
+              <div className="w-full bg-gray-200 rounded-full h-2 border border-black overflow-hidden">
+                <div
+                  className="h-full rounded-full bg-black"
+                  style={{ width: `${nodo.percentuale || 0}%` }}
+                />
+              </div>
+              <span className="text-xs font-extrabold text-black">{nodo.percentuale || 0}%</span>
+            </div>
+          )}
+          {/* Action buttons (only add) */}
+          {onAdd && nodo && (
+            <div className="flex justify-center gap-1 mt-2 opacity-0 group-hover:opacity-100 transition-opacity">
+              {onEdit && (
+                <button
+                  onClick={(e) => { e.stopPropagation(); onEdit(nodo); }}
+                  className="w-6 h-6 flex items-center justify-center rounded-lg bg-sky-300 border-2 border-black text-[10px] hover:scale-110 transition-transform cursor-pointer shadow-[1px_1px_0px_#000]"
+                  title="Modifica progetto"
+                >✏️</button>
+              )}
+              <button
+                onClick={(e) => { e.stopPropagation(); onAdd(nodo.id); }}
+                className="w-7 h-6 flex items-center justify-center rounded-lg bg-amber-400 border-2 border-black text-black font-extrabold text-sm hover:scale-110 transition-transform cursor-pointer shadow-[2px_2px_0px_#000]"
+                title="Aggiungi fase principale"
+              >＋</button>
+            </div>
+          )}
+          {/* Expand toggle */}
+          {hasChildren && (
+            <button
+              onClick={(e) => { e.stopPropagation(); setExpanded(!expanded); }}
+              className="absolute -bottom-3.5 left-1/2 -translate-x-1/2 w-6 h-6 rounded-full bg-white border-2 border-black flex items-center justify-center text-black hover:bg-amber-400 transition-colors cursor-pointer z-10 shadow-[2px_2px_0px_#000]"
+              title={expanded ? "Comprimi" : "Espandi"}
+            >
+              <svg className={`w-3 h-3 transition-transform duration-200 ${expanded ? "" : "-rotate-90"}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+          )}
+        </div>
+        {hasChildren && expanded && (
+          <div className="flex flex-col items-center">
+            <div className="w-px h-10 bg-black" />
+            <div className="flex items-start wbs-children-row">
+              {childArray.map((child, i) => (
+                <div key={child.key || i} className="wbs-child-wrapper flex flex-col items-center px-4">{child}</div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col items-center">
       {/* ── Node Card ── */}
       <div
-        className={`wbs-node-card relative border-2 rounded-xl px-5 py-3 min-w-[170px] max-w-[240px] bg-white text-center shadow-[4px_4px_0px_#000] transition-all select-none ${STATO_BORDER[statoNodo] || STATO_BORDER["todo"]}`}
+        className={`wbs-node-card group relative border-2 rounded-xl px-5 py-3 min-w-[170px] max-w-[240px] text-center shadow-[4px_4px_0px_#000] transition-all select-none ${STATO_BORDER[statoNodo] || STATO_BORDER["todo"]} ${STATO_BG[statoNodo] || STATO_BG["todo"]}`}
       >
         <div className="text-black font-extrabold text-sm">{wbsCode}</div>
         <div className="text-gray-700 text-xs font-bold mt-1 leading-relaxed">
@@ -77,6 +159,61 @@ function TreeNode({
               >
                 📝
               </span>
+            )}
+          </div>
+        )}
+
+        {/* Action buttons — visible on hover */}
+        {(onEdit || onAdd || onDelete) && nodo && (
+          <div className="flex justify-center gap-0.5 mt-2 pb-1 opacity-0 group-hover:opacity-100 transition-opacity">
+            {onEdit && (
+              <button
+                onClick={(e) => { e.stopPropagation(); onEdit(nodo); }}
+                className="w-6 h-6 flex items-center justify-center rounded-lg bg-sky-300 border-2 border-black text-[10px] hover:scale-110 transition-transform cursor-pointer shadow-[1px_1px_0px_#000]"
+                title="Modifica"
+              >✏️</button>
+            )}
+            {onAdd && (
+              <button
+                onClick={(e) => { e.stopPropagation(); onAdd(nodo.id); }}
+                className="w-7 h-6 flex items-center justify-center rounded-lg bg-amber-400 border-2 border-black text-black font-extrabold text-sm hover:scale-110 transition-transform cursor-pointer shadow-[2px_2px_0px_#000]"
+                title="Aggiungi fase figlia"
+              >＋</button>
+            )}
+            {onPromuovi && (
+              <button
+                onClick={(e) => { e.stopPropagation(); onPromuovi(nodo.id); }}
+                className="w-6 h-6 flex items-center justify-center rounded-lg bg-white border-2 border-black text-black font-bold text-xs hover:scale-110 transition-transform cursor-pointer shadow-[1px_1px_0px_#000]"
+                title="Promuovi (sale di livello)"
+              >←</button>
+            )}
+            {onDeclassa && (
+              <button
+                onClick={(e) => { e.stopPropagation(); onDeclassa(nodo.id); }}
+                className="w-6 h-6 flex items-center justify-center rounded-lg bg-white border-2 border-black text-black font-bold text-xs hover:scale-110 transition-transform cursor-pointer shadow-[1px_1px_0px_#000]"
+                title="Declassa (scende di livello)"
+              >→</button>
+            )}
+            {onMoveUp && !isFirst && (
+              <button
+                onClick={(e) => { e.stopPropagation(); onMoveUp(nodo.id); }}
+                className="w-6 h-6 flex items-center justify-center rounded-lg bg-white border-2 border-black text-black font-bold text-xs hover:scale-110 transition-transform cursor-pointer shadow-[1px_1px_0px_#000]"
+                title="Sposta su"
+              >↑</button>
+            )}
+            {onMoveDown && !isLast && (
+              <button
+                onClick={(e) => { e.stopPropagation(); onMoveDown(nodo.id); }}
+                className="w-6 h-6 flex items-center justify-center rounded-lg bg-white border-2 border-black text-black font-bold text-xs hover:scale-110 transition-transform cursor-pointer shadow-[1px_1px_0px_#000]"
+                title="Sposta giù"
+              >↓</button>
+            )}
+            {onDelete && (
+              <button
+                onClick={(e) => { e.stopPropagation(); onDelete(nodo.id); }}
+                className="w-6 h-6 flex items-center justify-center rounded-lg bg-red-600 border-2 border-black text-black font-bold text-[10px] hover:scale-110 transition-transform cursor-pointer shadow-[1px_1px_0px_#000]"
+                title="Elimina"
+              >🗑</button>
             )}
           </div>
         )}
@@ -132,13 +269,57 @@ function TreeNode({
 }
 
 /* ─── Main WBSTree component ─── */
-export default function WBSTree({ progetto, progettoIndex }) {
+export default function WBSTree({ progetto, progettoIndex, onAggiungiNodo, onEliminaNodo, onAggiornaNodo, onSpostaNodo, onPromuoviNodo, onDeclassaNodo, onReplaceProgetto }) {
   const containerRef = useRef(null);
   const treeRef = useRef(null);
   const [isPanning, setIsPanning] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [formatoPDF, setFormatoPDF] = useState("a4");
+  const [modal, setModal] = useState(null);
   const panRef = useRef({ startX: 0, startY: 0, scrollX: 0, scrollY: 0 });
+
+  /* ── Undo stack ── */
+  const undoStackRef = useRef([]);
+  const [canUndo, setCanUndo] = useState(false);
+  const progettoRef = useRef(progetto);
+  useRef(() => { progettoRef.current = progetto; });
+  // Keep ref current on every render
+  progettoRef.current = progetto;
+
+  const pushUndo = useCallback(() => {
+    undoStackRef.current = [...undoStackRef.current.slice(-29), JSON.parse(JSON.stringify(progettoRef.current))];
+    setCanUndo(true);
+  }, []);
+
+  const handleUndo = useCallback(() => {
+    if (undoStackRef.current.length === 0) return;
+    const snapshot = undoStackRef.current[undoStackRef.current.length - 1];
+    undoStackRef.current = undoStackRef.current.slice(0, -1);
+    setCanUndo(undoStackRef.current.length > 0);
+    onReplaceProgetto && onReplaceProgetto(progetto.id, snapshot);
+  }, [progetto.id, onReplaceProgetto]);
+
+  /* ── Edit handlers ── */
+  const handleEdit = useCallback((nodo) => { setModal({ node: nodo }); }, []);
+  const handleAdd = useCallback((parentId) => { setModal({ parentId, node: null }); }, []);
+  const handleDelete = useCallback((nodeId) => { pushUndo(); onEliminaNodo && onEliminaNodo(progetto.id, nodeId); }, [progetto.id, onEliminaNodo, pushUndo]);
+  const handleMoveUp = useCallback((nodeId) => { pushUndo(); onSpostaNodo && onSpostaNodo(progetto.id, nodeId, -1); }, [progetto.id, onSpostaNodo, pushUndo]);
+  const handleMoveDown = useCallback((nodeId) => { pushUndo(); onSpostaNodo && onSpostaNodo(progetto.id, nodeId, 1); }, [progetto.id, onSpostaNodo, pushUndo]);
+  const handlePromuovi = useCallback((nodeId) => { pushUndo(); onPromuoviNodo && onPromuoviNodo(progetto.id, nodeId); }, [progetto.id, onPromuoviNodo, pushUndo]);
+  const handleDeclassa = useCallback((nodeId) => { pushUndo(); onDeclassaNodo && onDeclassaNodo(progetto.id, nodeId); }, [progetto.id, onDeclassaNodo, pushUndo]);
+  const handleNodeSave = useCallback((nodeData) => {
+    pushUndo();
+    if (modal?.node) {
+      onAggiornaNodo && onAggiornaNodo(progetto.id, modal.node.id, nodeData);
+    } else {
+      onAggiungiNodo && onAggiungiNodo(progetto.id, modal.parentId, nodeData);
+    }
+    setModal(null);
+  }, [modal, progetto.id, onAggiornaNodo, onAggiungiNodo, pushUndo]);
+  const handleNodeDelete = useCallback(() => {
+    if (modal?.node) { pushUndo(); onEliminaNodo && onEliminaNodo(progetto.id, modal.node.id); }
+    setModal(null);
+  }, [modal, progetto.id, onEliminaNodo, pushUndo]);
 
   /* ── Export tree as visual PDF ── */
   const handleExportTreePDF = async () => {
@@ -398,6 +579,8 @@ export default function WBSTree({ progetto, progettoIndex }) {
   /* ── Recursive node renderer ── */
   function renderNodo(nodo, index, siblings, parentCode, depth = 1) {
     const code = `${parentCode}.${index + 1}`;
+    const isFirst = index === 0;
+    const isLast = index === (siblings ? siblings.length - 1 : 0);
 
     return (
       <TreeNode
@@ -405,6 +588,15 @@ export default function WBSTree({ progetto, progettoIndex }) {
         wbsCode={code}
         titolo={nodo.titolo}
         nodo={nodo}
+        onEdit={onAggiornaNodo ? handleEdit : undefined}
+        onAdd={onAggiungiNodo ? handleAdd : undefined}
+        onDelete={onEliminaNodo ? handleDelete : undefined}
+        onMoveUp={onSpostaNodo ? handleMoveUp : undefined}
+        onMoveDown={onSpostaNodo ? handleMoveDown : undefined}
+        onPromuovi={onPromuoviNodo ? handlePromuovi : undefined}
+        onDeclassa={onDeclassaNodo ? handleDeclassa : undefined}
+        isFirst={isFirst}
+        isLast={isLast}
       >
         {(nodo.children || []).map((child, ci) =>
           renderNodo(child, ci, nodo.children, code, depth + 1),
@@ -423,9 +615,22 @@ export default function WBSTree({ progetto, progettoIndex }) {
         <div className="flex-1">
           <h1 className="text-black font-extrabold text-lg">Diagramma WBS</h1>
           <p className="text-gray-600 text-xs font-semibold">
-            Work Breakdown Structure | Visualizzazione in sola lettura
+            Work Breakdown Structure | Hover sui nodi per modificare
           </p>
         </div>
+
+        {/* Undo button */}
+        <button
+          onClick={handleUndo}
+          disabled={!canUndo}
+          className="flex items-center gap-2 px-4 py-2 bg-white hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed border-2 border-black rounded-xl text-black text-sm font-bold transition-all cursor-pointer shadow-[3px_3px_0px_#000] hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-none"
+          title="Annulla ultima azione (Undo)"
+        >
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 14l-4-4m0 0l4-4m-4 4h11a4 4 0 010 8h-1" />
+          </svg>
+          Annulla
+        </button>
         <select
           value={formatoPDF}
           onChange={(e) => setFormatoPDF(e.target.value)}
@@ -459,7 +664,7 @@ export default function WBSTree({ progetto, progettoIndex }) {
       </div>
 
       <p className="shrink-0 text-center text-gray-700 text-[11px] py-2 bg-white border-b-2 border-black font-bold">
-        Trascina lo sfondo per navigare · Clicca sui nodi per espandere/comprimere · Per modificare, usa la Dashboard
+        Trascina lo sfondo per navigare · Hover su un nodo per modificare · ＋ aggiunge fasi figlie · 🗑 elimina
       </p>
 
       {/* ── Pannable / scrollable tree canvas ── */}
@@ -480,6 +685,9 @@ export default function WBSTree({ progetto, progettoIndex }) {
             wbsCode={rootCode}
             titolo={progetto.titolo}
             nodo={progetto}
+            isRoot
+            onAdd={onAggiungiNodo ? handleAdd : undefined}
+            onEdit={onAggiornaNodo ? handleEdit : undefined}
           >
             {(progetto.children || []).map((nodo, i) =>
               renderNodo(nodo, i, progetto.children, rootCode),
@@ -488,6 +696,15 @@ export default function WBSTree({ progetto, progettoIndex }) {
         </div>
       </div>
 
+      {/* TaskModal */}
+      {modal && (
+        <TaskModal
+          task={modal.node}
+          onSave={handleNodeSave}
+          onDelete={modal.node ? handleNodeDelete : undefined}
+          onClose={() => setModal(null)}
+        />
+      )}
     </div>
   );
 }

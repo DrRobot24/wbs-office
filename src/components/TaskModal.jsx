@@ -1,144 +1,6 @@
 import { useState } from "react";
 import { derivaStato, STATO_BADGE, STATO_LABEL } from "../utils/treeHelpers";
 
-/* ─── Componente riga materiale ─── */
-function MaterialeRow({ mat, index, onChange, onRemove }) {
-  return (
-    <div className="flex items-start gap-2 bg-gray-100 rounded-xl p-2.5 border-2 border-black">
-      <div className="flex-1 grid grid-cols-2 gap-2">
-        <input
-          type="text"
-          value={mat.descrizione}
-          onChange={(e) => onChange(index, "descrizione", e.target.value)}
-          className="bg-white border-2 border-black rounded-xl px-2 py-1.5 text-xs text-black font-medium focus:outline-none focus:ring-2 focus:ring-amber-400 col-span-2"
-          placeholder="Materiale / Articolo"
-        />
-        <input
-          type="text"
-          value={mat.quantita}
-          onChange={(e) => onChange(index, "quantita", e.target.value)}
-          className="bg-white border-2 border-black rounded-xl px-2 py-1.5 text-xs text-black font-medium focus:outline-none focus:ring-2 focus:ring-amber-400"
-          placeholder="Qtà (es: 50 mq)"
-        />
-        <input
-          type="text"
-          value={mat.fornitore}
-          onChange={(e) => onChange(index, "fornitore", e.target.value)}
-          className="bg-white border-2 border-black rounded-xl px-2 py-1.5 text-xs text-black font-medium focus:outline-none focus:ring-2 focus:ring-amber-400"
-          placeholder="Fornitore"
-        />
-        <input
-          type="number"
-          step="0.01"
-          value={mat.costo}
-          onChange={(e) => onChange(index, "costo", e.target.value)}
-          className="bg-white border-2 border-black rounded-xl px-2 py-1.5 text-xs text-black font-medium focus:outline-none focus:ring-2 focus:ring-amber-400"
-          placeholder="Costo €"
-        />
-        <select
-          value={mat.statoOrdine || "da-ordinare"}
-          onChange={(e) => onChange(index, "statoOrdine", e.target.value)}
-          className="bg-white border-2 border-black rounded-xl px-2 py-1.5 text-xs text-black font-medium focus:outline-none focus:ring-2 focus:ring-amber-400"
-        >
-          <option value="da-ordinare">Da ordinare</option>
-          <option value="ordinato">Ordinato</option>
-          <option value="in-consegna">In consegna</option>
-          <option value="ricevuto">Ricevuto</option>
-        </select>
-      </div>
-      <button
-        onClick={() => onRemove(index)}
-        className="mt-1 w-6 h-6 flex items-center justify-center rounded-full bg-rose-300 border-2 border-black text-black text-xs font-bold cursor-pointer shrink-0"
-        title="Rimuovi"
-      >
-        ×
-      </button>
-    </div>
-  );
-}
-
-/* ─── Riga fattura ─── */
-function FatturaRow({ fat, index, onChange, onRemove }) {
-  return (
-    <div className="flex items-start gap-2 bg-lime-100 rounded-xl p-2.5 border-2 border-black">
-      <div className="flex-1 grid grid-cols-2 gap-2">
-        <input
-          type="text"
-          value={fat.numero}
-          onChange={(e) => onChange(index, "numero", e.target.value)}
-          className="bg-white border-2 border-black rounded-xl px-2 py-1.5 text-xs text-black font-medium focus:outline-none focus:ring-2 focus:ring-amber-400"
-          placeholder="N° Fattura"
-        />
-        <input
-          type="date"
-          value={fat.data}
-          onChange={(e) => onChange(index, "data", e.target.value)}
-          className="bg-white border-2 border-black rounded-xl px-2 py-1.5 text-xs text-black font-medium focus:outline-none focus:ring-2 focus:ring-amber-400"
-        />
-        <input
-          type="text"
-          value={fat.fornitore}
-          onChange={(e) => onChange(index, "fornitore", e.target.value)}
-          className="bg-white border-2 border-black rounded-xl px-2 py-1.5 text-xs text-black font-medium focus:outline-none focus:ring-2 focus:ring-amber-400"
-          placeholder="Fornitore"
-        />
-        <input
-          type="number"
-          step="0.01"
-          value={fat.importo}
-          onChange={(e) => onChange(index, "importo", e.target.value)}
-          className="bg-white border-2 border-black rounded-xl px-2 py-1.5 text-xs text-black font-medium focus:outline-none focus:ring-2 focus:ring-amber-400"
-          placeholder="Importo €"
-        />
-        <input
-          type="text"
-          value={fat.descrizione}
-          onChange={(e) => onChange(index, "descrizione", e.target.value)}
-          className="bg-white border-2 border-black rounded-xl px-2 py-1.5 text-xs text-black font-medium focus:outline-none focus:ring-2 focus:ring-amber-400 col-span-2"
-          placeholder="Descrizione"
-        />
-      </div>
-      <button
-        onClick={() => onRemove(index)}
-        className="mt-1 w-6 h-6 flex items-center justify-center rounded-full bg-rose-300 border-2 border-black text-black text-xs font-bold cursor-pointer shrink-0"
-        title="Rimuovi"
-      >
-        ×
-      </button>
-    </div>
-  );
-}
-
-/* ─── Sezione collassabile ─── */
-function Sezione({ titolo, icona, children, defaultOpen = true }) {
-  const [aperta, setAperta] = useState(defaultOpen);
-  return (
-    <div className="border-2 border-black rounded-xl overflow-hidden">
-      <button
-        onClick={() => setAperta(!aperta)}
-        className="w-full flex items-center gap-2 px-3 py-2 bg-gray-100 hover:bg-gray-200 text-black text-xs font-bold cursor-pointer transition-colors"
-      >
-        <span>{icona}</span>
-        <span className="flex-1 text-left">{titolo}</span>
-        <svg
-          className={`w-3 h-3 transition-transform ${aperta ? "" : "-rotate-90"}`}
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M19 9l-7 7-7-7"
-          />
-        </svg>
-      </button>
-      {aperta && <div className="p-3 space-y-3">{children}</div>}
-    </div>
-  );
-}
-
 /* ─── Input con label ─── */
 const inputCls =
   "w-full bg-white border-2 border-black rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-amber-400 text-sm text-black font-medium";
@@ -157,13 +19,14 @@ export default function TaskModal({ task, onSave, onDelete, onClose }) {
     costoTotale: t?.costoTotale ?? "",
     costoReale: t?.costoReale ?? "",
     dataInizio: t?.dataInizio || "",
-    materiali: t?.materiali
-      ? JSON.parse(JSON.stringify(t.materiali))
-      : [],
-    fatture: t?.fatture
-      ? JSON.parse(JSON.stringify(t.fatture))
-      : [],
     note: t?.note || "",
+    noteGrid: t?.noteGrid
+      ? JSON.parse(JSON.stringify(t.noteGrid))
+      : [
+          { desc: "", add: "", sub: "", mul: "", div: "" },
+          { desc: "", add: "", sub: "", mul: "", div: "" },
+          { desc: "", add: "", sub: "", mul: "", div: "" },
+        ],
   });
 
   const [form, setForm] = useState(() => buildForm(task));
@@ -182,75 +45,43 @@ export default function TaskModal({ task, onSave, onDelete, onClose }) {
     if (campo === "titolo" && valore.trim()) setErrore("");
   };
 
-  // ─── Gestione materiali ───
-  const aggiungiMateriale = () => {
+  /* ── Grid helpers ── */
+  const gridChange = (rowIdx, col, val) => {
+    setForm((prev) => {
+      const grid = prev.noteGrid.map((r, i) =>
+        i === rowIdx ? { ...r, [col]: val } : r
+      );
+      return { ...prev, noteGrid: grid };
+    });
+  };
+  const gridAddRow = () => {
     setForm((prev) => ({
       ...prev,
-      materiali: [
-        ...prev.materiali,
-        {
-          descrizione: "",
-          quantita: "",
-          fornitore: "",
-          costo: "",
-          statoOrdine: "da-ordinare",
-        },
-      ],
+      noteGrid: [...prev.noteGrid, { desc: "", add: "", sub: "", mul: "", div: "" }],
+    }));
+  };
+  const gridRemoveRow = (idx) => {
+    setForm((prev) => ({
+      ...prev,
+      noteGrid: prev.noteGrid.filter((_, i) => i !== idx),
     }));
   };
 
-  const aggiornaMateriale = (index, campo, valore) => {
-    setForm((prev) => ({
-      ...prev,
-      materiali: prev.materiali.map((m, i) =>
-        i === index ? { ...m, [campo]: valore } : m,
-      ),
-    }));
-  };
-
-  const rimuoviMateriale = (index) => {
-    setForm((prev) => ({
-      ...prev,
-      materiali: prev.materiali.filter((_, i) => i !== index),
-    }));
-  };
-
-  // ─── Gestione fatture ───
-  const aggiungiFattura = () => {
-    setForm((prev) => ({
-      ...prev,
-      fatture: [
-        ...prev.fatture,
-        { numero: "", data: "", importo: "", fornitore: "", descrizione: "" },
-      ],
-    }));
-  };
-
-  const aggiornaFattura = (index, campo, valore) => {
-    setForm((prev) => ({
-      ...prev,
-      fatture: prev.fatture.map((f, i) =>
-        i === index ? { ...f, [campo]: valore } : f,
-      ),
-    }));
-  };
-
-  const rimuoviFattura = (index) => {
-    setForm((prev) => ({
-      ...prev,
-      fatture: prev.fatture.filter((_, i) => i !== index),
-    }));
-  };
-
-  // ─── Calcolo costo materiali ───
-  const costoMateriali = form.materiali.reduce(
-    (acc, m) => acc + (parseFloat(m.costo) || 0),
-    0,
-  );
-  const costoFatture = form.fatture.reduce(
-    (acc, f) => acc + (parseFloat(f.importo) || 0),
-    0,
-  );
+  /* ── Grid totals ── */
+  const gridTotals = (() => {
+    const g = form.noteGrid;
+    const nums = (col) => g.map((r) => parseFloat(r[col])).filter((v) => !isNaN(v));
+    const addVals = nums("add");
+    const subVals = nums("sub");
+    const mulVals = nums("mul");
+    const divVals = nums("div").filter((v) => v !== 0);
+    return {
+      add: addVals.length ? addVals.reduce((a, b) => a + b, 0) : null,
+      sub: subVals.length ? subVals.reduce((a, b, i) => (i === 0 ? b : a - b)) : null,
+      mul: mulVals.length ? mulVals.reduce((a, b) => a * b, 1) : null,
+      div: divVals.length ? divVals.reduce((a, b, i) => (i === 0 ? b : a / b)) : null,
+    };
+  })();
 
   const handleSave = () => {
     if (!form.titolo.trim()) {
@@ -283,7 +114,7 @@ export default function TaskModal({ task, onSave, onDelete, onClose }) {
       onClick={onClose}
     >
       <div
-        className="bg-white border-3 border-black rounded-2xl shadow-[8px_8px_0px_#000] w-full max-w-lg mx-4 flex flex-col max-h-[90vh]"
+        className="bg-white border-3 border-black rounded-2xl shadow-[8px_8px_0px_#000] w-full max-w-xl mx-4 flex flex-col max-h-[90vh]"
         onClick={(e) => e.stopPropagation()}
       >
         {/* ── Header ── */}
@@ -308,12 +139,7 @@ export default function TaskModal({ task, onSave, onDelete, onClose }) {
             className={tabCls("materiali")}
             onClick={() => setTab("materiali")}
           >
-            📦 Materiali & Costi
-            {form.materiali.length > 0 && (
-              <span className="ml-1.5 bg-amber-400 text-black text-[10px] font-bold px-1.5 py-0.5 rounded-full border border-black">
-                {form.materiali.length}
-              </span>
-            )}
+            � Costi
           </button>
           <button className={tabCls("note")} onClick={() => setTab("note")}>
             📝 Note
@@ -407,191 +233,141 @@ export default function TaskModal({ task, onSave, onDelete, onClose }) {
             </>
           )}
 
-          {/* ═══ TAB MATERIALI & COSTI ═══ */}
+          {/* ═══ TAB COSTI ═══ */}
           {tab === "materiali" && (
             <>
               {/* Costo Preventivato */}
-              <Sezione
-                titolo="Costo Preventivato"
-                icona="📋"
-                defaultOpen={true}
-              >
-                <div>
-                  <label className={labelCls}>
-                    Budget previsto per questa voce (€)
-                  </label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    value={form.costoTotale}
-                    onChange={(e) =>
-                      handleChange("costoTotale", e.target.value)
-                    }
-                    className={inputCls}
-                    placeholder="Es: 15000.00"
-                  />
-                </div>
-                {form.materiali.length > 0 && (
-                  <div className="flex items-center justify-between bg-gray-100 rounded-xl px-3 py-2 border-2 border-black">
-                    <span className="text-xs text-gray-700 font-semibold">
-                      Totale materiali inseriti:
-                    </span>
-                    <span className="text-sm font-extrabold text-black">
-                      €{" "}
-                      {costoMateriali.toLocaleString("it-IT", {
-                        minimumFractionDigits: 2,
-                      })}
-                    </span>
-                  </div>
-                )}
-              </Sezione>
+              <div>
+                <label className={labelCls}>Costo Preventivato (€)</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  value={form.costoTotale}
+                  onChange={(e) => handleChange("costoTotale", e.target.value)}
+                  className={inputCls}
+                  placeholder="Es: 15000.00"
+                />
+              </div>
 
-              {/* Costo Reale / Fatture */}
-              <Sezione
-                titolo="Costo Reale / Fatture"
-                icona="🧾"
-                defaultOpen={true}
-              >
-                <div>
-                  <label className={labelCls}>
-                    Costo reale complessivo (€)
-                  </label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    value={form.costoReale}
-                    onChange={(e) =>
-                      handleChange("costoReale", e.target.value)
-                    }
-                    className={inputCls}
-                    placeholder="Es: 14500.00"
-                  />
-                </div>
+              {/* Costo Reale */}
+              <div>
+                <label className={labelCls}>Costo Reale / Speso (€)</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  value={form.costoReale}
+                  onChange={(e) => handleChange("costoReale", e.target.value)}
+                  className={inputCls}
+                  placeholder="Es: 14500.00"
+                />
+              </div>
 
-                {/* Riepilogo fatture */}
-                {form.fatture.length > 0 && (
-                  <div className="flex items-center justify-between bg-gray-100 rounded-xl px-3 py-2 border-2 border-black">
-                    <span className="text-xs text-gray-700 font-semibold">
-                      Totale fatture inserite:
-                    </span>
-                    <span className="text-sm font-extrabold text-black">
-                      €{" "}
-                      {costoFatture.toLocaleString("it-IT", {
-                        minimumFractionDigits: 2,
-                      })}
-                    </span>
-                  </div>
-                )}
-
-                {/* Delta preventivo vs reale */}
-                {form.costoTotale !== "" && form.costoReale !== "" && (
-                  <div
-                    className={`flex items-center justify-between rounded-xl px-3 py-2 border-2 border-black ${
-                      (parseFloat(form.costoReale) || 0) >
-                      (parseFloat(form.costoTotale) || 0)
-                        ? "bg-rose-200"
-                        : "bg-lime-200"
-                    }`}
-                  >
-                    <span className="text-xs text-black font-bold">
-                      Scostamento:
-                    </span>
-                    <span
-                      className={`text-sm font-extrabold ${
-                        (parseFloat(form.costoReale) || 0) >
-                        (parseFloat(form.costoTotale) || 0)
-                          ? "text-black"
-                          : "text-black"
-                      }`}
-                    >
-                      {(parseFloat(form.costoReale) || 0) >
-                      (parseFloat(form.costoTotale) || 0)
-                        ? "+"
-                        : ""}
-                      €{" "}
-                      {(
-                        (parseFloat(form.costoReale) || 0) -
-                        (parseFloat(form.costoTotale) || 0)
-                      ).toLocaleString("it-IT", {
-                        minimumFractionDigits: 2,
-                      })}
-                    </span>
-                  </div>
-                )}
-
-                {/* Lista fatture */}
-                <div className="space-y-2 mt-2">
-                  {form.fatture.length === 0 && (
-                    <p className="text-xs text-gray-400 italic py-2 text-center">
-                      Nessuna fattura inserita
-                    </p>
-                  )}
-                  {form.fatture.map((fat, i) => (
-                    <FatturaRow
-                      key={i}
-                      fat={fat}
-                      index={i}
-                      onChange={aggiornaFattura}
-                      onRemove={rimuoviFattura}
-                    />
-                  ))}
-                </div>
-                <button
-                  onClick={aggiungiFattura}
-                  className="w-full py-2 text-xs font-bold text-black bg-lime-300 hover:translate-y-[1px] hover:shadow-none border-2 border-dashed border-black rounded-xl cursor-pointer transition-all shadow-[2px_2px_0px_#000]"
+              {/* Scostamento (calcolato) */}
+              {form.costoTotale !== "" && form.costoReale !== "" && (
+                <div
+                  className={`flex items-center justify-between rounded-xl px-4 py-3 border-2 border-black ${
+                    (parseFloat(form.costoReale) || 0) > (parseFloat(form.costoTotale) || 0)
+                      ? "bg-rose-200"
+                      : "bg-lime-200"
+                  }`}
                 >
-                  + Aggiungi fattura
-                </button>
-              </Sezione>
-
-              {/* Lista materiali */}
-              <Sezione
-                titolo={`Materiali da ordinare (${form.materiali.length})`}
-                icona="📦"
-                defaultOpen={true}
-              >
-                <div className="space-y-2">
-                  {form.materiali.length === 0 && (
-                    <p className="text-xs text-gray-400 italic py-2 text-center">
-                      Nessun materiale aggiunto
-                    </p>
-                  )}
-                  {form.materiali.map((mat, i) => (
-                    <MaterialeRow
-                      key={i}
-                      mat={mat}
-                      index={i}
-                      onChange={aggiornaMateriale}
-                      onRemove={rimuoviMateriale}
-                    />
-                  ))}
+                  <span className="text-xs font-bold text-black">Scostamento:</span>
+                  <span className="text-sm font-extrabold text-black">
+                    {(parseFloat(form.costoReale) || 0) > (parseFloat(form.costoTotale) || 0) ? "+" : ""}
+                    €{" "}
+                    {((parseFloat(form.costoReale) || 0) - (parseFloat(form.costoTotale) || 0)).toLocaleString("it-IT", { minimumFractionDigits: 2 })}
+                  </span>
                 </div>
-                <button
-                  onClick={aggiungiMateriale}
-                  className="w-full py-2 text-xs font-bold text-black bg-amber-400 hover:translate-y-[1px] hover:shadow-none border-2 border-dashed border-black rounded-xl cursor-pointer transition-all shadow-[2px_2px_0px_#000]"
-                >
-                  + Aggiungi materiale
-                </button>
-              </Sezione>
+              )}
             </>
           )}
 
           {/* ═══ TAB NOTE ═══ */}
           {tab === "note" && (
             <>
+              {/* Mini spreadsheet */}
+              <div className="overflow-x-auto">
+                <table className="w-full border-collapse text-xs">
+                  <thead>
+                    <tr className="bg-gray-100 border-2 border-black">
+                      <th className="text-left px-2 py-1.5 font-bold text-black border-r-2 border-black w-[35%]">Descrizione</th>
+                      <th className="px-2 py-1.5 font-bold text-green-700 border-r border-black w-[14%] text-center">➕ Somma</th>
+                      <th className="px-2 py-1.5 font-bold text-red-600 border-r border-black w-[14%] text-center">➖ Diff.</th>
+                      <th className="px-2 py-1.5 font-bold text-blue-700 border-r border-black w-[14%] text-center">✖️ Prodotto</th>
+                      <th className="px-2 py-1.5 font-bold text-amber-700 border-r border-black w-[14%] text-center">➗ Quoz.</th>
+                      <th className="w-[9%]"></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {form.noteGrid.map((row, i) => (
+                      <tr key={i} className="border-b border-gray-200 hover:bg-gray-50">
+                        <td className="border-r-2 border-black p-0.5">
+                          <input
+                            type="text"
+                            value={row.desc}
+                            onChange={(e) => gridChange(i, "desc", e.target.value)}
+                            className="w-full px-2 py-1 text-xs bg-transparent focus:outline-none focus:bg-amber-50 rounded"
+                            placeholder={`Voce ${i + 1}`}
+                          />
+                        </td>
+                        {["add", "sub", "mul", "div"].map((col) => (
+                          <td key={col} className="border-r border-gray-200 p-0.5 text-center">
+                            <input
+                              type="number"
+                              value={row[col]}
+                              onChange={(e) => gridChange(i, col, e.target.value)}
+                              className="w-full px-1 py-1 text-xs text-center bg-transparent focus:outline-none focus:bg-amber-50 rounded"
+                              placeholder="—"
+                            />
+                          </td>
+                        ))}
+                        <td className="text-center p-0.5">
+                          <button
+                            onClick={() => gridRemoveRow(i)}
+                            className="w-5 h-5 flex items-center justify-center mx-auto rounded bg-gray-200 hover:bg-red-200 text-gray-500 hover:text-red-700 font-bold text-xs cursor-pointer transition-colors"
+                            title="Rimuovi riga"
+                          >×</button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                  <tfoot>
+                    <tr className="border-t-2 border-black bg-gray-100 font-extrabold">
+                      <td className="px-2 py-1.5 text-xs font-extrabold text-black border-r-2 border-black">TOTALE</td>
+                      {[
+                        { key: "add", color: "text-green-700" },
+                        { key: "sub", color: "text-red-600" },
+                        { key: "mul", color: "text-blue-700" },
+                        { key: "div", color: "text-amber-700" },
+                      ].map(({ key, color }) => (
+                        <td key={key} className={`px-2 py-1.5 text-xs text-center border-r border-gray-300 ${color}`}>
+                          {gridTotals[key] !== null
+                            ? Number(gridTotals[key].toFixed(4)).toLocaleString("it-IT")
+                            : "—"}
+                        </td>
+                      ))}
+                      <td />
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
+
+              <button
+                onClick={gridAddRow}
+                className="w-full py-1.5 text-xs font-bold text-black bg-amber-100 hover:bg-amber-200 border-2 border-dashed border-amber-600 rounded-xl cursor-pointer transition-colors"
+              >
+                + Aggiungi riga
+              </button>
+
+              {/* Free text note */}
               <div>
-                <label className={labelCls}>Note libere</label>
+                <label className={labelCls}>Appunti liberi</label>
                 <textarea
                   value={form.note}
                   onChange={(e) => handleChange("note", e.target.value)}
-                  className={`${inputCls} min-h-[200px] resize-y`}
-                  placeholder={
-                    "Appunti, promemoria, specifiche tecniche, riferimenti normativi...\n\nEs:\n- Verificare conformità normativa impianti\n- Contattare geom. Rossi per rilievi\n- Attesa conferma preventivo fornitore XY"
-                  }
+                  className={`${inputCls} min-h-[80px] resize-y`}
+                  placeholder="Appunti, promemoria, riferimenti..."
                 />
-                <p className="text-[10px] text-gray-600 font-semibold mt-1 text-right">
-                  {form.note.length} caratteri
-                </p>
               </div>
             </>
           )}

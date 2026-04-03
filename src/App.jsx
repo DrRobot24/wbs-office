@@ -2,7 +2,6 @@ import { useState } from "react";
 import Sidebar from "./components/Sidebar";
 import WBSTree from "./components/WBSTree";
 import Dashboard from "./components/Dashboard";
-import CostiManagement from "./components/CostiManagement";
 import GanttChart from "./components/GanttChart";
 import LoginPage from "./components/LoginPage";
 import { useProjects } from "./hooks/useProjects";
@@ -24,11 +23,12 @@ export default function App() {
     spostaNodo,
     promuoviNodo,
     declassaNodo,
+    replaceProgetto,
     esportaJSON,
     importaJSON,
   } = useProjects();
 
-  const [vista, setVista] = useState("dashboard"); // 'dashboard' | 'wbs' | 'costi' | 'gantt'
+  const [vista, setVista] = useState("dashboard"); // 'dashboard' | 'wbs' | 'gantt'
 
   // Se Supabase è configurato e non c'è utente → mostra login
   if (cloud && !user) {
@@ -90,16 +90,6 @@ export default function App() {
               🌳 Albero WBS
             </button>
             <button
-              onClick={() => setVista("costi")}
-              className={`px-5 py-2.5 text-sm font-bold rounded-t-xl transition-all cursor-pointer ${
-                vista === "costi"
-                  ? "bg-lime-300 text-black border-2 border-black border-b-0 -mb-[2px] shadow-[2px_-2px_0px_#000]"
-                  : "text-gray-500 hover:text-black hover:bg-gray-100 border-2 border-transparent"
-              }`}
-            >
-              💰 Costi
-            </button>
-            <button
               onClick={() => setVista("gantt")}
               className={`px-5 py-2.5 text-sm font-bold rounded-t-xl transition-all cursor-pointer ${
                 vista === "gantt"
@@ -133,13 +123,6 @@ export default function App() {
               onAggiornaNodo={aggiornaNodo}
               onSpostaNodo={spostaNodo}
             />
-          ) : vista === "costi" ? (
-            <CostiManagement
-              progetto={activeProject}
-              onAggiornaNodo={(nodeId, data) =>
-                aggiornaNodo(activeProject.id, nodeId, data)
-              }
-            />
           ) : vista === "gantt" ? (
             <GanttChart
               progetto={activeProject}
@@ -151,6 +134,13 @@ export default function App() {
             <WBSTree
               progetto={activeProject}
               progettoIndex={progettoIndex}
+              onAggiungiNodo={aggiungiNodo}
+              onEliminaNodo={eliminaNodo}
+              onAggiornaNodo={aggiornaNodo}
+              onSpostaNodo={spostaNodo}
+              onPromuoviNodo={promuoviNodo}
+              onDeclassaNodo={declassaNodo}
+              onReplaceProgetto={replaceProgetto}
             />
           )}
         </div>

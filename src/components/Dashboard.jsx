@@ -48,6 +48,22 @@ function TreeRow({ nodo, depth, onEdit, onAdd, onDelete, onMoveUp, onMoveDown, i
           {nodo.titolo}
         </span>
 
+        {/* Costi inline */}
+        {(Number(nodo.costoTotale) > 0 || Number(nodo.costoReale) > 0) && (
+          <div className="flex items-center gap-1.5 shrink-0">
+            {nodo.costoTotale > 0 && (
+              <span className="text-[10px] px-2 py-0.5 rounded-lg bg-white border-2 border-black font-bold text-black">
+                📋 €{Number(nodo.costoTotale).toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              </span>
+            )}
+            {nodo.costoReale > 0 && (
+              <span className={`text-[10px] px-2 py-0.5 rounded-lg border-2 border-black font-bold ${nodo.costoTotale > 0 && nodo.costoReale > nodo.costoTotale ? "bg-rose-300 text-black" : "bg-lime-200 text-black"}`}>
+                🧾 €{Number(nodo.costoReale).toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              </span>
+            )}
+          </div>
+        )}
+
         {/* Descendant count for non-leaves */}
         {!isLeaf && (
           <span className="text-[10px] text-gray-600 font-bold shrink-0">
@@ -78,34 +94,8 @@ function TreeRow({ nodo, depth, onEdit, onAdd, onDelete, onMoveUp, onMoveDown, i
             ✏️
           </button>
           <button
-            onClick={() => onAdd(nodo.id)}
-            className="text-[10px] px-2 py-1 rounded-lg bg-amber-400 border-2 border-black text-black font-bold hover:translate-x-[0.5px] hover:translate-y-[0.5px] hover:shadow-none shadow-[1px_1px_0px_#000] transition-all cursor-pointer"
-            title="Aggiungi figlio"
-          >
-            ＋
-          </button>
-          {/* Move up/down */}
-          {!isFirst && (
-            <button
-              onClick={() => onMoveUp(nodo.id)}
-              className="text-[10px] px-1.5 py-1 rounded-lg bg-white border-2 border-black text-black font-bold hover:bg-gray-100 transition-all cursor-pointer"
-              title="Sposta su"
-            >
-              ↑
-            </button>
-          )}
-          {!isLast && (
-            <button
-              onClick={() => onMoveDown(nodo.id)}
-              className="text-[10px] px-1.5 py-1 rounded-lg bg-white border-2 border-black text-black font-bold hover:bg-gray-100 transition-all cursor-pointer"
-              title="Sposta giù"
-            >
-              ↓
-            </button>
-          )}
-          <button
             onClick={() => onDelete(nodo.id)}
-            className="text-[10px] px-2 py-1 rounded-lg bg-rose-300 border-2 border-black text-black font-bold hover:translate-x-[0.5px] hover:translate-y-[0.5px] hover:shadow-none shadow-[1px_1px_0px_#000] transition-all cursor-pointer"
+            className="text-[10px] px-2 py-1 rounded-lg bg-red-600 border-2 border-black text-black font-bold hover:translate-x-[0.5px] hover:translate-y-[0.5px] hover:shadow-none shadow-[1px_1px_0px_#000] transition-all cursor-pointer"
             title="Elimina"
           >
             🗑
@@ -132,6 +122,28 @@ function TreeRow({ nodo, depth, onEdit, onAdd, onDelete, onMoveUp, onMoveDown, i
   );
 }
 
+/* ── Totali costi ricorsivi ── */
+function sommaCosti(nodo) {
+  const isLeaf = !nodo.children || nodo.children.length === 0;
+  if (isLeaf) {
+    return {
+      preventivato: Number(nodo.costoTotale) || 0,
+      reale: Number(nodo.costoReale) || 0,
+    };
+  }
+  return nodo.children.reduce(
+    (acc, child) => {
+      const c = sommaCosti(child);
+      return { preventivato: acc.preventivato + c.preventivato, reale: acc.reale + c.reale };
+    },
+    { preventivato: 0, reale: 0 },
+  );
+}
+
+function fmt(n) {
+  return n.toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
 export default function Dashboard({
   progetto,
   onAggiungiNodo,
@@ -142,6 +154,16 @@ export default function Dashboard({
   const [formatoPDF, setFormatoPDF] = useState("a4");
   const [modal, setModal] = useState(null); // { node } for editing, { parentId } for new
   const children = progetto.children || [];
+
+  const costiTotali = children.reduce(
+    (acc, child) => {
+      const c = sommaCosti(child);
+      return { preventivato: acc.preventivato + c.preventivato, reale: acc.reale + c.reale };
+    },
+    { preventivato: 0, reale: 0 },
+  );
+  const scostamento = costiTotali.reale - costiTotali.preventivato;
+  const hasCosti = costiTotali.preventivato > 0 || costiTotali.reale > 0;
 
   /* ── Callbacks ── */
   const handleEdit = useCallback((nodo) => {
@@ -194,6 +216,26 @@ export default function Dashboard({
             </div>
             <p className="text-sm text-gray-600 ml-10 font-semibold">Pagina di pilotaggio</p>
           </div>
+
+          {/* Totali costi */}
+          {hasCosti && (
+            <div className="flex items-center gap-3">
+              <div className="flex flex-col items-center px-4 py-2 bg-white border-2 border-black rounded-xl shadow-[3px_3px_0px_#000]">
+                <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wide">📋 Preventivato</span>
+                <span className="text-base font-extrabold text-black">€ {fmt(costiTotali.preventivato)}</span>
+              </div>
+              <div className="flex flex-col items-center px-4 py-2 bg-white border-2 border-black rounded-xl shadow-[3px_3px_0px_#000]">
+                <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wide">🧾 Reale</span>
+                <span className="text-base font-extrabold text-black">€ {fmt(costiTotali.reale)}</span>
+              </div>
+              {costiTotali.preventivato > 0 && costiTotali.reale > 0 && (
+                <div className={`flex flex-col items-center px-4 py-2 border-2 border-black rounded-xl shadow-[3px_3px_0px_#000] ${scostamento > 0 ? "bg-rose-300" : "bg-lime-300"}`}>
+                  <span className="text-[10px] font-bold text-black uppercase tracking-wide">📊 Scostamento</span>
+                  <span className="text-base font-extrabold text-black">{scostamento > 0 ? "+" : ""}€ {fmt(scostamento)}</span>
+                </div>
+              )}
+            </div>
+          )}
           <div className="flex items-center gap-2">
             <button
               onClick={() => esportaExcel(progetto)}
