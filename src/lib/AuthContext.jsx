@@ -29,6 +29,7 @@ export function AuthProvider({ children }) {
       .select("*")
       .eq("id", userId)
       .single();
+    console.log("[Auth] Profilo caricato:", data);
     setProfile(data ?? null);
   };
 
@@ -95,6 +96,8 @@ export function AuthProvider({ children }) {
     profile,
     loading,
     cloud, // true se Supabase è configurato
+    isAdmin: profile?.role === "admin",
+    isModerator: profile?.role === "moderator",
     signIn,
     signUp,
     signOut,

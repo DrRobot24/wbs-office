@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useAuth } from "../lib/AuthContext";
 
 export default function Sidebar({
@@ -6,10 +7,42 @@ export default function Sidebar({
   onSelectProject,
   onAggiungiProgetto,
   onEliminaProgetto,
+  onArchiviaProgetto,
+  onRipristinaProgetto,
   onEsportaJSON,
   onImportaJSON,
+  isAdmin,
+  vista,
+  onOpenAdmin,
 }) {
   const { user, profile, cloud, signOut } = useAuth();
+  const [archivioAperto, setArchivioAperto] = useState(false);
+  const [selezioneAttiva, setSelezioneAttiva] = useState(false);
+  const [selezionati, setSelezionati] = useState(new Set());
+
+  const progettiAttivi = projects.filter((p) => !p.archived);
+  const progettiArchiviati = projects.filter((p) => p.archived);
+
+  const toggleSelezione = (id) => {
+    setSelezionati((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const archiviaSelezionati = () => {
+    selezionati.forEach((id) => onArchiviaProgetto(id));
+    setSelezionati(new Set());
+    setSelezioneAttiva(false);
+  };
+
+  const chiudiSelezione = () => {
+    setSelezionati(new Set());
+    setSelezioneAttiva(false);
+  };
+
   const handleImport = () => {
     const input = document.createElement("input");
     input.type = "file";
@@ -47,6 +80,19 @@ export default function Sidebar({
             Progetti
           </p>
           <div className="flex gap-1.5">
+            {progettiAttivi.length > 1 && (
+              <button
+                onClick={() => selezioneAttiva ? chiudiSelezione() : setSelezioneAttiva(true)}
+                className={`w-7 h-7 flex items-center justify-center rounded-lg border text-[11px] cursor-pointer transition-all ${
+                  selezioneAttiva
+                    ? "bg-amber-400 border-black text-black"
+                    : "bg-gray-800 border-gray-700 hover:bg-gray-700 text-gray-400 hover:text-white"
+                }`}
+                title={selezioneAttiva ? "Esci dalla selezione" : "Seleziona più progetti"}
+              >
+                ☑
+              </button>
+            )}
             <button
               onClick={onEsportaJSON}
               className="w-7 h-7 flex items-center justify-center rounded-lg bg-gray-800 border border-gray-700 hover:bg-gray-700 text-gray-400 hover:text-white text-[11px] cursor-pointer transition-all"
@@ -64,6 +110,29 @@ export default function Sidebar({
           </div>
         </div>
 
+        {/* Barra azioni selezione multipla */}
+        {selezioneAttiva && (
+          <div className="px-4 mb-3 flex gap-2">
+            <button
+              onClick={archiviaSelezionati}
+              disabled={selezionati.size === 0}
+              className={`flex-1 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer border-2 ${
+                selezionati.size > 0
+                  ? "bg-amber-400 text-black border-black shadow-[2px_2px_0px_#000] hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-none"
+                  : "bg-gray-800 text-gray-600 border-gray-700 cursor-not-allowed"
+              }`}
+            >
+              📦 Archivia ({selezionati.size})
+            </button>
+            <button
+              onClick={chiudiSelezione}
+              className="py-2 px-3 rounded-xl text-xs font-bold bg-gray-800 text-gray-400 border-2 border-gray-700 hover:bg-gray-700 hover:text-white cursor-pointer transition-all"
+            >
+              ✕
+            </button>
+          </div>
+        )}
+
         <div className="px-4 mb-3">
           <button
             onClick={onAggiungiProgetto}
@@ -73,7 +142,7 @@ export default function Sidebar({
           </button>
         </div>
 
-        {projects.map((p, i) => (
+        {progettiAttivi.map((p, i) => (
           <div
             key={p.id}
             className={`flex items-center gap-2 px-5 py-2.5 cursor-pointer transition-all duration-200 group ${
@@ -81,15 +150,27 @@ export default function Sidebar({
                 ? "bg-amber-400/15 border-l-4 border-amber-400 text-white"
                 : "text-gray-400 hover:bg-white/5 hover:text-white border-l-4 border-transparent"
             }`}
-            onClick={() => onSelectProject(p.id)}
+            onClick={() => selezioneAttiva ? toggleSelezione(p.id) : onSelectProject(p.id)}
           >
-            <span className={`shrink-0 w-6 h-6 flex items-center justify-center rounded-lg text-[11px] font-extrabold border-2 ${
-              p.id === activeProjectId
-                ? "bg-amber-400 text-black border-black"
-                : "bg-white/10 text-gray-400 border-gray-600"
-            }`}>
-              {i + 1}
-            </span>
+            {selezioneAttiva ? (
+              <span
+                className={`shrink-0 w-5 h-5 flex items-center justify-center rounded-md border-2 transition-all ${
+                  selezionati.has(p.id)
+                    ? "bg-amber-400 border-black text-black"
+                    : "bg-gray-800 border-gray-600 text-transparent"
+                }`}
+              >
+                {selezionati.has(p.id) && <span className="text-[10px] font-extrabold">✓</span>}
+              </span>
+            ) : (
+              <span className={`shrink-0 w-6 h-6 flex items-center justify-center rounded-lg text-[11px] font-extrabold border-2 ${
+                p.id === activeProjectId
+                  ? "bg-amber-400 text-black border-black"
+                  : "bg-white/10 text-gray-400 border-gray-600"
+              }`}>
+                {i + 1}
+              </span>
+            )}
             <span className="flex-1 text-sm truncate font-bold">
               {p.titolo}
             </span>
@@ -98,30 +179,119 @@ export default function Sidebar({
             >
               {p.percentuale}%
             </span>
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                if (confirm(`Eliminare "${p.titolo}"?`)) {
-                  onEliminaProgetto(p.id);
-                }
-              }}
-              className="opacity-0 group-hover:opacity-100 text-rose-400 hover:text-rose-300 text-xs cursor-pointer transition-opacity font-bold"
-              title="Elimina progetto"
-            >
-              ✕
-            </button>
+            {!selezioneAttiva && (
+              <>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onArchiviaProgetto(p.id);
+                  }}
+                  className="opacity-0 group-hover:opacity-100 text-gray-500 hover:text-amber-400 text-xs cursor-pointer transition-opacity font-bold"
+                  title="Archivia progetto"
+                >
+                  📦
+                </button>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (confirm(`Eliminare "${p.titolo}"?`)) {
+                      onEliminaProgetto(p.id);
+                    }
+                  }}
+                  className="opacity-0 group-hover:opacity-100 text-rose-400 hover:text-rose-300 text-xs cursor-pointer transition-opacity font-bold"
+                  title="Elimina progetto"
+                >
+                  ✕
+                </button>
+              </>
+            )}
           </div>
         ))}
 
-        {projects.length === 0 && (
+        {progettiAttivi.length === 0 && (
           <p className="px-5 text-xs text-gray-600 italic py-4 font-semibold">
             Nessun progetto
           </p>
+        )}
+
+        {/* ═══ Sezione Archivio ═══ */}
+        {progettiArchiviati.length > 0 && (
+          <div className="mt-4 border-t border-gray-700/50">
+            <button
+              onClick={() => setArchivioAperto((v) => !v)}
+              className="w-full px-5 py-3 flex items-center justify-between text-gray-500 hover:text-gray-300 transition-colors cursor-pointer"
+            >
+              <span className="text-[10px] uppercase tracking-widest font-bold">
+                📦 Archivio ({progettiArchiviati.length})
+              </span>
+              <span className="text-xs transition-transform" style={{ transform: archivioAperto ? "rotate(180deg)" : "rotate(0deg)" }}>
+                ▾
+              </span>
+            </button>
+
+            {archivioAperto && (
+              <div className="pb-2">
+                {progettiArchiviati.map((p) => (
+                  <div
+                    key={p.id}
+                    className={`flex items-center gap-2 px-5 py-2 cursor-pointer transition-all duration-200 group ${
+                      p.id === activeProjectId
+                        ? "bg-gray-700/30 border-l-4 border-gray-500 text-gray-300"
+                        : "text-gray-600 hover:bg-white/5 hover:text-gray-400 border-l-4 border-transparent"
+                    }`}
+                    onClick={() => onSelectProject(p.id)}
+                  >
+                    <span className="flex-1 text-sm truncate font-bold italic">
+                      {p.titolo}
+                    </span>
+                    <span className="text-xs font-bold text-gray-600">
+                      {p.percentuale}%
+                    </span>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onRipristinaProgetto(p.id);
+                      }}
+                      className="opacity-0 group-hover:opacity-100 text-emerald-400 hover:text-emerald-300 text-xs cursor-pointer transition-opacity font-bold"
+                      title="Ripristina progetto"
+                    >
+                      ↩
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (confirm(`Eliminare definitivamente "${p.titolo}"?`)) {
+                          onEliminaProgetto(p.id);
+                        }
+                      }}
+                      className="opacity-0 group-hover:opacity-100 text-rose-400 hover:text-rose-300 text-xs cursor-pointer transition-opacity font-bold"
+                      title="Elimina definitivamente"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         )}
       </div>
 
       {/* Footer — Utente e stato cloud */}
       <div className="p-4 border-t-2 border-black flex flex-col gap-2">
+        {/* Pulsante Admin */}
+        {isAdmin && (
+          <button
+            onClick={onOpenAdmin}
+            className={`w-full py-2.5 rounded-xl text-sm font-bold transition-all cursor-pointer border-2 ${
+              vista === "admin"
+                ? "bg-rose-500 text-white border-black shadow-none"
+                : "bg-gray-800 text-gray-400 border-gray-700 hover:bg-rose-500 hover:text-white hover:border-black"
+            }`}
+          >
+            ⚙ Pannello Admin
+          </button>
+        )}
         {/* Profilo utente */}
         {cloud && user && (
           <div className="flex items-center gap-2.5 py-2 px-3 rounded-xl bg-gray-800 border-2 border-gray-700">

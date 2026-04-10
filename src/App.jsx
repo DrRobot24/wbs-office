@@ -4,11 +4,12 @@ import WBSTree from "./components/WBSTree";
 import Dashboard from "./components/Dashboard";
 import GanttChart from "./components/GanttChart";
 import LoginPage from "./components/LoginPage";
+import AdminPanel from "./components/AdminPanel";
 import { useProjects } from "./hooks/useProjects";
 import { useAuth } from "./lib/AuthContext";
 
 export default function App() {
-  const { user, profile, loading, cloud } = useAuth();
+  const { user, profile, loading, cloud, isAdmin, signOut } = useAuth();
 
   const {
     projects,
@@ -17,6 +18,8 @@ export default function App() {
     setActiveProjectId,
     aggiungiProgetto,
     eliminaProgetto,
+    archiviaProgetto,
+    ripristinaProgetto,
     aggiungiNodo,
     eliminaNodo,
     aggiornaNodo,
@@ -28,7 +31,7 @@ export default function App() {
     importaJSON,
   } = useProjects();
 
-  const [vista, setVista] = useState("dashboard"); // 'dashboard' | 'wbs' | 'gantt'
+  const [vista, setVista] = useState("dashboard"); // 'dashboard' | 'wbs' | 'gantt' | 'admin'
 
   // Se Supabase è configurato e non c'è utente → mostra login
   if (cloud && !user) {
@@ -60,12 +63,22 @@ export default function App() {
         }}
         onAggiungiProgetto={aggiungiProgetto}
         onEliminaProgetto={eliminaProgetto}
+        onArchiviaProgetto={archiviaProgetto}
+        onRipristinaProgetto={ripristinaProgetto}
         onEsportaJSON={esportaJSON}
         onImportaJSON={importaJSON}
+        isAdmin={isAdmin}
+        vista={vista}
+        onOpenAdmin={() => setVista("admin")}
       />
 
-      {/* Main Content */}
-      {activeProject ? (
+      {/* Admin Panel */}
+      {vista === "admin" && isAdmin ? (
+        <AdminPanel
+          projects={projects}
+          onClose={() => setVista("dashboard")}
+        />
+      ) : activeProject ? (
         <div className="flex-1 flex flex-col overflow-hidden">
           {/* Tab Navigation */}
           <div className="bg-white border-b-2 border-black px-6 flex items-end gap-2 pt-3">
@@ -103,13 +116,21 @@ export default function App() {
             {/* Spacer + User badge */}
             <div className="flex-1" />
             {user && (
-              <div className="flex items-center gap-2 mb-1.5 px-3 py-1.5 bg-gray-100 border-2 border-black rounded-xl shadow-[2px_2px_0px_#000]">
-                <div className="w-6 h-6 rounded-lg bg-amber-400 border-2 border-black flex items-center justify-center shrink-0 text-[10px] font-extrabold text-black">
-                  {(profile?.full_name || user.email || "?")[0].toUpperCase()}
+              <div className="flex items-center gap-2 mb-1.5">
+                <div className="flex items-center gap-2 px-3 py-1.5 bg-gray-100 border-2 border-black rounded-xl shadow-[2px_2px_0px_#000]">
+                  <div className="w-6 h-6 rounded-lg bg-amber-400 border-2 border-black flex items-center justify-center shrink-0 text-[10px] font-extrabold text-black">
+                    {(profile?.full_name || user.email || "?")[0].toUpperCase()}
+                  </div>
+                  <span className="text-xs font-bold text-black truncate max-w-[140px]">
+                    {profile?.full_name || user.email}
+                  </span>
                 </div>
-                <span className="text-xs font-bold text-black truncate max-w-[140px]">
-                  {profile?.full_name || user.email}
-                </span>
+                <button
+                  onClick={signOut}
+                  className="px-3 py-1.5 bg-rose-500 text-white rounded-xl text-xs font-bold border-2 border-black shadow-[2px_2px_0px_#000] hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-none transition-all cursor-pointer"
+                >
+                  Esci
+                </button>
               </div>
             )}
           </div>

@@ -228,7 +228,7 @@ export function useProjects() {
       });
       setActiveProjectId((prev) => {
         if (prev === id) {
-          const remaining = projects.filter((p) => p.id !== id);
+          const remaining = projects.filter((p) => p.id !== id && !p.archived);
           return remaining.length > 0 ? remaining[0].id : null;
         }
         return prev;
@@ -236,6 +236,29 @@ export function useProjects() {
     },
     [projects],
   );
+
+  const archiviaProgetto = useCallback(
+    (id) => {
+      setProjects((prev) =>
+        prev.map((p) => (p.id === id ? { ...p, archived: true } : p)),
+      );
+      setActiveProjectId((prev) => {
+        if (prev === id) {
+          const remaining = projects.filter((p) => p.id !== id && !p.archived);
+          return remaining.length > 0 ? remaining[0].id : null;
+        }
+        return prev;
+      });
+    },
+    [projects],
+  );
+
+  const ripristinaProgetto = useCallback((id) => {
+    setProjects((prev) =>
+      prev.map((p) => (p.id === id ? { ...p, archived: false } : p)),
+    );
+    setActiveProjectId(id);
+  }, []);
 
   const rinominaProgetto = useCallback((id, nuovoTitolo) => {
     setProjects((prev) =>
@@ -391,6 +414,8 @@ export function useProjects() {
     setActiveProjectId,
     aggiungiProgetto,
     eliminaProgetto,
+    archiviaProgetto,
+    ripristinaProgetto,
     rinominaProgetto,
     aggiungiNodo,
     eliminaNodo,
