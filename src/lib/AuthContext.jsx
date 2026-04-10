@@ -29,7 +29,6 @@ export function AuthProvider({ children }) {
       .select("*")
       .eq("id", userId)
       .single();
-    console.log("[Auth] Profilo caricato:", data);
     setProfile(data ?? null);
   };
 
