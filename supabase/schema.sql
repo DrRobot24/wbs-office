@@ -159,6 +159,22 @@ CREATE POLICY "Users can read shared projects"
     )
   );
 
+-- UPDATE: utente può modificare i progetti condivisi con lui
+CREATE POLICY "Users can update shared projects"
+  ON projects FOR UPDATE
+  USING (
+    EXISTS (
+      SELECT 1 FROM project_shares ps
+      WHERE ps.project_id = id AND ps.user_id = auth.uid()
+    )
+  )
+  WITH CHECK (
+    EXISTS (
+      SELECT 1 FROM project_shares ps
+      WHERE ps.project_id = id AND ps.user_id = auth.uid()
+    )
+  );
+
 -- ═══════════════════════════════════════════════
 -- 9. Policy profili: admin vede i profili degli utenti che ha creato
 -- ═══════════════════════════════════════════════
@@ -179,3 +195,67 @@ CREATE POLICY "Admin can read created users profiles"
 -- NOTA: La creazione utente via auth.admin richiede la service_role key
 -- (lato server / Edge Function). Per semplicità usiamo signUp client-side
 -- e poi l'admin collega l'utente via created_by.
+
+-- ═══════════════════════════════════════════════
+-- 11. Migrazione: colonne mancanti in profiles
+-- ═══════════════════════════════════════════════
+-- Esegui questo blocco nel Supabase SQL Editor se la tabella profiles
+-- esiste già senza le colonne role e created_by (ALTER è idempotente).
+
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS role        TEXT NOT NULL DEFAULT 'user';
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS created_by  UUID REFERENCES auth.users(id);
+
+-- Policy: Admin può aggiornare i profili degli utenti che ha creato
+-- (necessario per il flow di createUser con ripristino sessione)
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies WHERE tablename = 'profiles' AND policyname = 'Admin can update created users profiles'
+  ) THEN
+    EXECUTE $policy$
+      CREATE POLICY "Admin can update created users profiles"
+        ON profiles FOR UPDATE
+        USING (created_by = auth.uid())
+        WITH CHECK (created_by = auth.uid());
+    $policy$;
+  END IF;
+END $$;
+
+-- ═══════════════════════════════════════════════
+-- 12. Tabella Activity Log (audit trail)
+-- ═══════════════════════════════════════════════
+CREATE TABLE IF NOT EXISTS activity_log (
+  id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id     UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  action      TEXT NOT NULL,          -- es: project.create, node.update, share.add
+  target_type TEXT NOT NULL,          -- es: project, node, share, user
+  target_id   TEXT,                   -- id del progetto/nodo (può essere null)
+  details     JSONB DEFAULT '{}',     -- dettagli extra (titolo, campo modificato, ecc.)
+  created_at  TIMESTAMPTZ DEFAULT now()
+);
+
+ALTER TABLE activity_log ENABLE ROW LEVEL SECURITY;
+
+-- L'utente può inserire i propri log
+CREATE POLICY "Users can insert own logs"
+  ON activity_log FOR INSERT
+  WITH CHECK (auth.uid() = user_id);
+
+-- L'utente vede solo i propri log
+CREATE POLICY "Users can read own logs"
+  ON activity_log FOR SELECT
+  USING (auth.uid() = user_id);
+
+-- L'admin vede i log degli utenti che ha creato
+CREATE POLICY "Admin can read created users logs"
+  ON activity_log FOR SELECT
+  USING (
+    EXISTS (
+      SELECT 1 FROM profiles p
+      WHERE p.id = activity_log.user_id
+        AND p.created_by = auth.uid()
+    )
+  );
+
+CREATE INDEX IF NOT EXISTS idx_activity_user ON activity_log(user_id);
+CREATE INDEX IF NOT EXISTS idx_activity_created ON activity_log(created_at DESC);

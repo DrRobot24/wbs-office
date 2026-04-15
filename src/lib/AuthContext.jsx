@@ -24,11 +24,12 @@ export function AuthProvider({ children }) {
       setProfile(null);
       return;
     }
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from("profiles")
       .select("*")
       .eq("id", userId)
       .single();
+    console.log("[auth] fetchProfile:", data, "error:", error);
     setProfile(data ?? null);
   };
 
@@ -75,6 +76,8 @@ export function AuthProvider({ children }) {
 
   const signOut = async () => {
     if (!supabase) return;
+    // Pulisci la cache locale per evitare che il prossimo utente veda dati altrui
+    localStorage.removeItem("wbs-projects");
     await supabase.auth.signOut();
     setUser(null);
     setProfile(null);

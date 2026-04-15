@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { v4 as uuidv4 } from "uuid";
 import { ricalcolaPercentuali, migraProgetto } from "../utils/calcPercent";
 import { getProvider, isCloudMode } from "../lib/storageProvider";
+import { logActivity } from "../lib/activityLogger";
 
 const STORAGE_KEY = "wbs-projects";
 
@@ -171,40 +172,58 @@ async function syncToProvider(projects) {
   }
 }
 
-export function useProjects() {
-  const [projects, setProjects] = useState(() => caricaDaStorage());
-  const [activeProjectId, setActiveProjectId] = useState(() => {
-    const loaded = caricaDaStorage();
-    return loaded.length > 0 ? loaded[0].id : null;
-  });
+export function useProjects(userId) {
+  const [projects, setProjects] = useState([]);
+  const [activeProjectId, setActiveProjectId] = useState(null);
+
+  // Caricamento asincrono dal cloud al mount (se disponibile)
+  const cloudLoaded = useRef(false); // diventa true dopo il primo caricamento dal cloud
 
   useEffect(() => {
+    if (isCloudMode() && !cloudLoaded.current) return; // attende il caricamento cloud per evitare di salvare dati stale
     salvaSuStorage(projects); // cache locale sempre aggiornata
     syncToProvider(projects); // sync cloud (no-op se non configurato)
   }, [projects]);
 
-  // Caricamento asincrono dal cloud al mount (se disponibile)
-  const initialLoad = useRef(false);
+  // Ricarica dal cloud quando cambia utente
   useEffect(() => {
-    if (initialLoad.current) return;
-    initialLoad.current = true;
+    cloudLoaded.current = false;
+    if (!userId) {
+      setProjects([]);
+      setActiveProjectId(null);
+      return;
+    }
     (async () => {
-      if (!isCloudMode()) return;
+      if (!isCloudMode()) {
+        // Offline: carica da localStorage
+        const local = caricaDaStorage();
+        setProjects(local);
+        setActiveProjectId(local.length > 0 ? local[0].id : null);
+        return;
+      }
       try {
         const provider = await getProvider();
         const cloud = await provider.loadProjects();
-        if (cloud && cloud.length > 0) {
+        console.log("[cloud] loadProjects result:", cloud?.length, "progetti");
+        cloudLoaded.current = true;
+        if (cloud !== null) {
           const migrated = cloud
             .filter((p) => p.titolo !== "Progetto Demo")
             .map((p) => ricalcolaPercentuali(migraProgetto(p)));
           setProjects(migrated);
-          setActiveProjectId(migrated[0].id);
+          setActiveProjectId(migrated.length > 0 ? migrated[0].id : null);
+        } else {
+          setProjects([]);
+          setActiveProjectId(null);
         }
       } catch {
-        /* fallback a dati locali già caricati */
+        cloudLoaded.current = true;
+        const local = caricaDaStorage();
+        setProjects(local);
+        setActiveProjectId(local.length > 0 ? local[0].id : null);
       }
     })();
-  }, []);
+  }, [userId]);
 
   const activeProject = projects.find((p) => p.id === activeProjectId) || null;
 
@@ -218,10 +237,12 @@ export function useProjects() {
     });
     setProjects((prev) => [...prev, nuovo]);
     setActiveProjectId(nuovo.id);
+    logActivity("project.create", "project", nuovo.id, { titolo: nuovo.titolo });
   }, []);
 
   const eliminaProgetto = useCallback(
     (id) => {
+      const proj = projects.find((p) => p.id === id);
       setProjects((prev) => {
         const next = prev.filter((p) => p.id !== id);
         return next;
@@ -233,6 +254,16 @@ export function useProjects() {
         }
         return prev;
       });
+      logActivity("project.delete", "project", id, { titolo: proj?.titolo });
+      // Elimina dal cloud
+      (async () => {
+        try {
+          const provider = await getProvider();
+          await provider.deleteProject(id);
+        } catch (err) {
+          console.warn("[sync] deleteProject error:", err.message);
+        }
+      })();
     },
     [projects],
   );
@@ -280,8 +311,10 @@ export function useProjects() {
       percentuale: nodeData.percentuale || 0,
       priorita: nodeData.priorita || "media",
       costoTotale: nodeData.costoTotale ?? "",
+      costoReale: nodeData.costoReale ?? "",
       materiali: nodeData.materiali || [],
       note: nodeData.note || "",
+      noteGrid: nodeData.noteGrid || null,
       children: [],
     };
     setProjects((prev) =>
@@ -294,6 +327,7 @@ export function useProjects() {
         return ricalcolaPercentuali(aggiornato);
       }),
     );
+    logActivity("node.create", "node", nuovoNodo.id, { titolo: nuovoNodo.titolo, progettoId });
   }, []);
 
   /** Elimina qualsiasi nodo dall'albero (e tutti i suoi discendenti) */
@@ -304,6 +338,7 @@ export function useProjects() {
         return ricalcolaPercentuali(rimuoviNodo(p, nodeId));
       }),
     );
+    logActivity("node.delete", "node", nodeId, { progettoId });
   }, []);
 
   /** Rinomina qualsiasi nodo */
@@ -326,6 +361,7 @@ export function useProjects() {
         );
       }),
     );
+    logActivity("node.update", "node", nodeId, { progettoId, fields: Object.keys(data) });
   }, []);
 
   /** Sposta un nodo su/giù tra i suoi fratelli */

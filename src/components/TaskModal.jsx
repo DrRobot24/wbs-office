@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { derivaStato, STATO_BADGE, STATO_LABEL } from "../utils/treeHelpers";
 
 /* ─── Input con label ─── */
@@ -30,15 +30,13 @@ export default function TaskModal({ task, onSave, onDelete, onClose }) {
   });
 
   const [form, setForm] = useState(() => buildForm(task));
-  const [prevTask, setPrevTask] = useState(task);
   const [errore, setErrore] = useState("");
   const [tab, setTab] = useState("generale"); // 'generale' | 'materiali' | 'note'
 
-  // React-recommended pattern: adjust state when props change
-  if (task !== prevTask) {
-    setPrevTask(task);
+  // Resetta il form quando cambia il task
+  useEffect(() => {
     if (task) setForm(buildForm(task));
-  }
+  }, [task]);
 
   const handleChange = (campo, valore) => {
     setForm((prev) => ({ ...prev, [campo]: valore }));

@@ -83,22 +83,44 @@ const supabaseProvider = {
     } = await supabase.auth.getUser();
     if (!user) return null;
 
-    const { data, error } = await supabase
+    // 1. Progetti propri
+    const { data: ownData, error: ownError } = await supabase
       .from("projects")
-      .select("id, titolo, data, updated_at")
+      .select("id, titolo, data, updated_at, user_id")
       .eq("user_id", user.id)
       .order("created_at", { ascending: true });
 
-    if (error) {
-      console.error("[Supabase] loadProjects error:", error.message);
+    if (ownError) {
+      console.error("[Supabase] loadProjects error:", ownError.message);
       return null;
     }
 
-    // Ricostruisce l'array di progetti dal formato DB
-    return data.map((row) => ({
+    // 2. Progetti condivisi con me
+    const { data: shareRows, error: shareError } = await supabase
+      .from("project_shares")
+      .select("project_id")
+      .eq("user_id", user.id);
+
+    console.log("[cloud] shares per me:", shareRows, "errore:", shareError);
+
+    let sharedData = [];
+    if (shareRows && shareRows.length > 0) {
+      const ids = shareRows.map((s) => s.project_id);
+      const { data, error: sharedError } = await supabase
+        .rpc("get_projects_by_ids", { project_ids: ids });
+      console.log("[cloud] progetti condivisi caricati:", data?.length, "errore:", sharedError);
+      sharedData = data || [];
+    }
+
+    // Unisci propri + condivisi
+    const allData = [...(ownData || []), ...sharedData];
+
+    return allData.map((row) => ({
       ...row.data,
       id: row.id,
       titolo: row.titolo,
+      _ownerId: row.user_id,
+      _isShared: row.user_id !== user.id,
     }));
   },
 
@@ -116,6 +138,9 @@ const supabaseProvider = {
       data: { user },
     } = await supabase.auth.getUser();
     if (!user) return;
+
+    // I progetti condivisi sono in sola lettura — non tentare il salvataggio
+    if (project._ownerId && project._ownerId !== user.id) return;
 
     const { error } = await supabase.from("projects").upsert(
       {

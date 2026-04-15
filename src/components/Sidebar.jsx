@@ -14,6 +14,7 @@ export default function Sidebar({
   isAdmin,
   vista,
   onOpenAdmin,
+  onOpenProfile,
 }) {
   const { user, profile, cloud, signOut } = useAuth();
   const [archivioAperto, setArchivioAperto] = useState(false);
@@ -72,6 +73,59 @@ export default function Sidebar({
           </div>
         </h1>
       </div>
+
+      {/* Profilo utente + Esci — subito sotto il logo */}
+      {cloud && user && (
+        <div className="px-4 py-3 border-b-2 border-black">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-lg bg-amber-400 border-2 border-black flex items-center justify-center shrink-0 text-[11px] font-extrabold text-black">
+              {(profile?.full_name || user.email || "?")[0].toUpperCase()}
+            </div>
+            <div className="flex-1 min-w-0">
+              {profile?.full_name && (
+                <p className="text-xs text-white font-bold truncate leading-tight">
+                  {profile.full_name}
+                </p>
+              )}
+              <p className="text-[10px] text-gray-500 truncate leading-tight">
+                {user.email}
+              </p>
+            </div>
+            <button
+              onClick={signOut}
+              className="px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer border-2 bg-gray-800 text-rose-400 border-gray-700 hover:bg-rose-500 hover:text-white hover:border-black"
+            >
+              Esci
+            </button>
+          </div>
+          <button
+            onClick={onOpenProfile}
+            className={`w-full mt-2 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer border-2 ${
+              vista === "profile"
+                ? "bg-amber-400 text-black border-black shadow-[2px_2px_0px_#000]"
+                : "bg-gray-800 text-gray-400 border-gray-700 hover:bg-gray-700 hover:text-white"
+            }`}
+          >
+            👤 Il Mio Profilo
+          </button>
+        </div>
+      )}
+
+      {/* Pulsante Pannello Admin — visibile solo per admin */}
+      {isAdmin && (
+        <div className="px-4 py-2 border-b-2 border-black">
+          <button
+            onClick={onOpenAdmin}
+            className={`w-full py-2.5 rounded-xl text-sm font-bold transition-all cursor-pointer border-2 ${
+              vista === "admin"
+                ? "bg-rose-500 text-white border-black shadow-[3px_3px_0px_#000]"
+                : "bg-gray-800 text-gray-400 border-gray-700 hover:bg-rose-500 hover:text-white hover:border-black"
+            }`}
+          >
+            ⚙ Pannello Admin
+          </button>
+        </div>
+      )}
 
       {/* Lista progetti */}
       <div className="flex-1 overflow-y-auto py-4">
@@ -277,46 +331,8 @@ export default function Sidebar({
         )}
       </div>
 
-      {/* Footer — Utente e stato cloud */}
+      {/* Footer — stato cloud */}
       <div className="p-4 border-t-2 border-black flex flex-col gap-2">
-        {/* Pulsante Admin */}
-        {isAdmin && (
-          <button
-            onClick={onOpenAdmin}
-            className={`w-full py-2.5 rounded-xl text-sm font-bold transition-all cursor-pointer border-2 ${
-              vista === "admin"
-                ? "bg-rose-500 text-white border-black shadow-none"
-                : "bg-gray-800 text-gray-400 border-gray-700 hover:bg-rose-500 hover:text-white hover:border-black"
-            }`}
-          >
-            ⚙ Pannello Admin
-          </button>
-        )}
-        {/* Profilo utente */}
-        {cloud && user && (
-          <div className="flex items-center gap-2.5 py-2 px-3 rounded-xl bg-gray-800 border-2 border-gray-700">
-            <div className="w-7 h-7 rounded-lg bg-amber-400 border-2 border-black flex items-center justify-center shrink-0 text-[10px] font-extrabold text-black">
-              {(profile?.full_name || user.email || "?")[0].toUpperCase()}
-            </div>
-            <div className="flex-1 min-w-0">
-              {profile?.full_name && (
-                <p className="text-xs text-white font-bold truncate leading-tight">
-                  {profile.full_name}
-                </p>
-              )}
-              <p className="text-[10px] text-gray-500 truncate leading-tight">
-                {user.email}
-              </p>
-            </div>
-            <button
-              onClick={signOut}
-              className="text-[10px] text-gray-500 hover:text-rose-400 cursor-pointer transition-colors shrink-0 font-bold uppercase"
-              title="Disconnetti"
-            >
-              Esci
-            </button>
-          </div>
-        )}
         {/* Cloud status */}
         <div className="flex items-center justify-center gap-2 py-1.5 px-3 rounded-xl bg-gray-800 border-2 border-gray-700">
           {cloud && user ? (

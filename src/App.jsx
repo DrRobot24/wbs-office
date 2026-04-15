@@ -5,6 +5,7 @@ import Dashboard from "./components/Dashboard";
 import GanttChart from "./components/GanttChart";
 import LoginPage from "./components/LoginPage";
 import AdminPanel from "./components/AdminPanel";
+import ProfilePage from "./components/ProfilePage";
 import { useProjects } from "./hooks/useProjects";
 import { useAuth } from "./lib/AuthContext";
 
@@ -29,7 +30,7 @@ export default function App() {
     replaceProgetto,
     esportaJSON,
     importaJSON,
-  } = useProjects();
+  } = useProjects(user?.id);
 
   const [vista, setVista] = useState("dashboard"); // 'dashboard' | 'wbs' | 'gantt' | 'admin'
 
@@ -70,12 +71,17 @@ export default function App() {
         isAdmin={isAdmin}
         vista={vista}
         onOpenAdmin={() => setVista("admin")}
+        onOpenProfile={() => setVista("profile")}
       />
 
       {/* Admin Panel */}
       {vista === "admin" && isAdmin ? (
         <AdminPanel
           projects={projects}
+          onClose={() => setVista("dashboard")}
+        />
+      ) : vista === "profile" ? (
+        <ProfilePage
           onClose={() => setVista("dashboard")}
         />
       ) : activeProject ? (

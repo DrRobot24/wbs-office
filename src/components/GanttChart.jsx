@@ -1,4 +1,4 @@
-import { useState, useRef, useMemo, useCallback } from "react";
+import { useState, useRef, useMemo, useCallback, useEffect } from "react";
 import jsPDF from "jspdf";
 import { calcolaStatoNodo, derivaStato, raccogliFoglie, STATO_LABEL } from "../utils/treeHelpers";
 
@@ -142,6 +142,19 @@ export default function GanttChart({ progetto, onAggiornaNodo }) {
   };
 
   /* ── Drag handlers ── */
+  const dragListenersRef = useRef(null);
+
+  // Cleanup drag listeners on unmount
+  useEffect(() => {
+    return () => {
+      if (dragListenersRef.current) {
+        document.removeEventListener("mousemove", dragListenersRef.current.onMove);
+        document.removeEventListener("mouseup", dragListenersRef.current.onUp);
+        dragListenersRef.current = null;
+      }
+    };
+  }, []);
+
   const handleDragStart = useCallback((e, id, mode, inizio, fine) => {
     e.preventDefault();
     e.stopPropagation();
@@ -171,6 +184,7 @@ export default function GanttChart({ progetto, onAggiornaNodo }) {
     const onUp = () => {
       document.removeEventListener("mousemove", onMove);
       document.removeEventListener("mouseup", onUp);
+      dragListenersRef.current = null;
       const ref = dragRef.current;
       dragRef.current = null;
       setDragDelta(null);
@@ -187,6 +201,7 @@ export default function GanttChart({ progetto, onAggiornaNodo }) {
       });
     };
 
+    dragListenersRef.current = { onMove, onUp };
     document.addEventListener("mousemove", onMove);
     document.addEventListener("mouseup", onUp);
   }, [dayW, onAggiornaNodo]);
