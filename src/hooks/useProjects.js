@@ -204,7 +204,6 @@ export function useProjects(userId) {
       try {
         const provider = await getProvider();
         const cloud = await provider.loadProjects();
-        console.log("[cloud] loadProjects result:", cloud?.length, "progetti");
         cloudLoaded.current = true;
         if (cloud !== null) {
           const migrated = cloud

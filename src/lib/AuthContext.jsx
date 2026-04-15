@@ -29,7 +29,6 @@ export function AuthProvider({ children }) {
       .select("*")
       .eq("id", userId)
       .single();
-    console.log("[auth] fetchProfile:", data, "error:", error);
     setProfile(data ?? null);
   };
 

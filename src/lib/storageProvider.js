@@ -101,14 +101,11 @@ const supabaseProvider = {
       .select("project_id")
       .eq("user_id", user.id);
 
-    console.log("[cloud] shares per me:", shareRows, "errore:", shareError);
-
     let sharedData = [];
     if (shareRows && shareRows.length > 0) {
       const ids = shareRows.map((s) => s.project_id);
       const { data, error: sharedError } = await supabase
         .rpc("get_projects_by_ids", { project_ids: ids });
-      console.log("[cloud] progetti condivisi caricati:", data?.length, "errore:", sharedError);
       sharedData = data || [];
     }
 

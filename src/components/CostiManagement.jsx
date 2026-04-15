@@ -1,6 +1,6 @@
 import { useState } from "react";
 import ProgressBar from "./ProgressBar";
-import { derivaStato } from "../utils/treeHelpers";
+import { derivaStato, STATO_BADGE, STATO_LABEL } from "../utils/treeHelpers";
 
 /* ── Helpers ricorsivi ── */
 
@@ -70,17 +70,6 @@ function raccogliNodi(nodo, percorso = []) {
   }
   return risultati;
 }
-
-const STATO_BADGE = {
-  todo: "bg-rose-300 text-black border-2 border-black",
-  "in-progress": "bg-yellow-300 text-black border-2 border-black",
-  done: "bg-lime-300 text-black border-2 border-black",
-};
-const STATO_LABEL = {
-  todo: "Da fare",
-  "in-progress": "In corso",
-  done: "Completato",
-};
 
 const ORDINE_STATO = {
   "da-ordinare": "bg-rose-300 text-black border-2 border-black",
