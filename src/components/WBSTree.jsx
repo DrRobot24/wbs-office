@@ -365,7 +365,7 @@ export default function WBSTree({ progetto, progettoIndex, onAggiungiNodo, onEli
 
         // Detect semaforo status from border classes
         const cls = card.className || "";
-        let borderColor = "#92400e"; // fallback amber
+        let borderColor = "#000000"; // fallback black
         if (cls.includes("border-red-"))
           borderColor = "#ef4444"; // rosso
         else if (cls.includes("border-yellow-"))

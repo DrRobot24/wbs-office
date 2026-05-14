@@ -145,7 +145,6 @@ export function esportaExcel(progetto) {
     { wch: 10 },
     { wch: 14 },
     { wch: 14 },
-    { wch: 14 },
     { wch: 8 },
     { wch: 14 },
     { wch: 14 },

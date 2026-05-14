@@ -358,11 +358,7 @@ export default function GanttChart({ progetto, onAggiornaNodo }) {
                 : [239, 68, 68];
           doc.setTextColor(...sc);
         } else {
-          doc.setTextColor(
-            r.isLeaf ? 203 : 251,
-            r.isLeaf ? 213 : 191,
-            r.isLeaf ? 225 : 36,
-          );
+          doc.setTextColor(r.isLeaf ? 60 : 20, r.isLeaf ? 60 : 20, r.isLeaf ? 60 : 20);
         }
         const text = doc.splitTextToSize(v, colWidths[i] - 2);
         doc.text(text[0] || "", xPos + 1, y + 4);
