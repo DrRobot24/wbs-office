@@ -3,6 +3,7 @@ import Sidebar from "./components/Sidebar";
 import WBSTree from "./components/WBSTree";
 import Dashboard from "./components/Dashboard";
 import GanttChart from "./components/GanttChart";
+import Archivio from "./components/Archivio";
 import LoginPage from "./components/LoginPage";
 import AdminPanel from "./components/AdminPanel";
 import ProfilePage from "./components/ProfilePage";
@@ -28,11 +29,11 @@ export default function App() {
     promuoviNodo,
     declassaNodo,
     replaceProgetto,
-    esportaJSON,
+    esportaProgettoJSON,
     importaJSON,
   } = useProjects(user?.id);
 
-  const [vista, setVista] = useState("dashboard"); // 'dashboard' | 'wbs' | 'gantt' | 'admin'
+  const [vista, setVista] = useState("dashboard"); // 'dashboard' | 'wbs' | 'gantt' | 'archivio' | 'admin' | 'profile'
 
   // Se Supabase è configurato e non c'è utente → mostra login
   if (cloud && !user) {
@@ -65,9 +66,7 @@ export default function App() {
         onAggiungiProgetto={aggiungiProgetto}
         onEliminaProgetto={eliminaProgetto}
         onArchiviaProgetto={archiviaProgetto}
-        onRipristinaProgetto={ripristinaProgetto}
-        onEsportaJSON={esportaJSON}
-        onImportaJSON={importaJSON}
+        onEsportaProgettoJSON={esportaProgettoJSON}
         isAdmin={isAdmin}
         vista={vista}
         onOpenAdmin={() => setVista("admin")}
@@ -84,14 +83,16 @@ export default function App() {
         <ProfilePage
           onClose={() => setVista("dashboard")}
         />
-      ) : activeProject ? (
+      ) : (
         <div className="flex-1 flex flex-col overflow-hidden">
-          {/* Tab Navigation */}
+          {/* Tab Navigation — sempre visibile */}
           <div className="bg-white border-b-2 border-black px-6 flex items-end gap-2 pt-3">
             <button
-              onClick={() => setVista("dashboard")}
-              className={`px-5 py-2.5 text-sm font-bold rounded-t-xl transition-all cursor-pointer ${
-                vista === "dashboard"
+              onClick={() => { if (activeProject) setVista("dashboard"); }}
+              className={`px-5 py-2.5 text-sm font-bold rounded-t-xl transition-all ${
+                activeProject ? "cursor-pointer" : "opacity-40 cursor-not-allowed"
+              } ${
+                vista === "dashboard" && activeProject
                   ? "bg-amber-400 text-black border-2 border-black border-b-0 -mb-[2px] shadow-[2px_-2px_0px_#000]"
                   : "text-gray-500 hover:text-black hover:bg-gray-100 border-2 border-transparent"
               }`}
@@ -99,9 +100,11 @@ export default function App() {
               📊 Dashboard
             </button>
             <button
-              onClick={() => setVista("wbs")}
-              className={`px-5 py-2.5 text-sm font-bold rounded-t-xl transition-all cursor-pointer ${
-                vista === "wbs"
+              onClick={() => { if (activeProject) setVista("wbs"); }}
+              className={`px-5 py-2.5 text-sm font-bold rounded-t-xl transition-all ${
+                activeProject ? "cursor-pointer" : "opacity-40 cursor-not-allowed"
+              } ${
+                vista === "wbs" && activeProject
                   ? "bg-sky-300 text-black border-2 border-black border-b-0 -mb-[2px] shadow-[2px_-2px_0px_#000]"
                   : "text-gray-500 hover:text-black hover:bg-gray-100 border-2 border-transparent"
               }`}
@@ -109,14 +112,26 @@ export default function App() {
               🌳 Albero WBS
             </button>
             <button
-              onClick={() => setVista("gantt")}
-              className={`px-5 py-2.5 text-sm font-bold rounded-t-xl transition-all cursor-pointer ${
-                vista === "gantt"
+              onClick={() => { if (activeProject) setVista("gantt"); }}
+              className={`px-5 py-2.5 text-sm font-bold rounded-t-xl transition-all ${
+                activeProject ? "cursor-pointer" : "opacity-40 cursor-not-allowed"
+              } ${
+                vista === "gantt" && activeProject
                   ? "bg-violet-300 text-black border-2 border-black border-b-0 -mb-[2px] shadow-[2px_-2px_0px_#000]"
                   : "text-gray-500 hover:text-black hover:bg-gray-100 border-2 border-transparent"
               }`}
             >
               📅 Cronoprogramma
+            </button>
+            <button
+              onClick={() => setVista("archivio")}
+              className={`px-5 py-2.5 text-sm font-bold rounded-t-xl transition-all cursor-pointer ${
+                vista === "archivio"
+                  ? "bg-orange-300 text-black border-2 border-black border-b-0 -mb-[2px] shadow-[2px_-2px_0px_#000]"
+                  : "text-gray-500 hover:text-black hover:bg-gray-100 border-2 border-transparent"
+              }`}
+            >
+              📦 Archivio
             </button>
 
             {/* Spacer + User badge */}
@@ -142,44 +157,60 @@ export default function App() {
           </div>
 
           {/* Vista attiva */}
-          {vista === "dashboard" ? (
-            <Dashboard
-              progetto={activeProject}
-              onAggiungiNodo={aggiungiNodo}
-              onEliminaNodo={eliminaNodo}
-              onAggiornaNodo={aggiornaNodo}
-              onSpostaNodo={spostaNodo}
+          {vista === "archivio" ? (
+            <Archivio
+              projects={projects}
+              onRipristina={ripristinaProgetto}
+              onElimina={eliminaProgetto}
+              onEsportaProgetto={esportaProgettoJSON}
+              onImporta={importaJSON}
+              onSelectProject={(id) => {
+                setActiveProjectId(id);
+                setVista("dashboard");
+              }}
             />
-          ) : vista === "gantt" ? (
-            <GanttChart
-              progetto={activeProject}
-              onAggiornaNodo={(nodeId, data) =>
-                aggiornaNodo(activeProject.id, nodeId, data)
-              }
-            />
+          ) : activeProject ? (
+            <>
+              {vista === "dashboard" ? (
+                <Dashboard
+                  progetto={activeProject}
+                  onAggiungiNodo={aggiungiNodo}
+                  onEliminaNodo={eliminaNodo}
+                  onAggiornaNodo={aggiornaNodo}
+                  onSpostaNodo={spostaNodo}
+                />
+              ) : vista === "gantt" ? (
+                <GanttChart
+                  progetto={activeProject}
+                  onAggiornaNodo={(nodeId, data) =>
+                    aggiornaNodo(activeProject.id, nodeId, data)
+                  }
+                />
+              ) : (
+                <WBSTree
+                  progetto={activeProject}
+                  progettoIndex={progettoIndex}
+                  onAggiungiNodo={aggiungiNodo}
+                  onEliminaNodo={eliminaNodo}
+                  onAggiornaNodo={aggiornaNodo}
+                  onSpostaNodo={spostaNodo}
+                  onPromuoviNodo={promuoviNodo}
+                  onDeclassaNodo={declassaNodo}
+                  onReplaceProgetto={replaceProgetto}
+                />
+              )}
+            </>
           ) : (
-            <WBSTree
-              progetto={activeProject}
-              progettoIndex={progettoIndex}
-              onAggiungiNodo={aggiungiNodo}
-              onEliminaNodo={eliminaNodo}
-              onAggiornaNodo={aggiornaNodo}
-              onSpostaNodo={spostaNodo}
-              onPromuoviNodo={promuoviNodo}
-              onDeclassaNodo={declassaNodo}
-              onReplaceProgetto={replaceProgetto}
-            />
+            <div className="flex-1 flex items-center justify-center">
+              <div className="text-center bg-white border-2 border-black rounded-xl p-10 shadow-[6px_6px_0px_#000]">
+                <p className="text-5xl mb-4">📊</p>
+                <p className="text-xl font-extrabold text-black">WBS Office</p>
+                <p className="text-sm mt-2 font-semibold text-gray-600">
+                  Seleziona o crea un progetto per iniziare
+                </p>
+              </div>
+            </div>
           )}
-        </div>
-      ) : (
-        <div className="flex-1 flex items-center justify-center">
-          <div className="text-center bg-white border-2 border-black rounded-xl p-10 shadow-[6px_6px_0px_#000]">
-            <p className="text-5xl mb-4">📊</p>
-            <p className="text-xl font-extrabold text-black">WBS Office</p>
-            <p className="text-sm mt-2 font-semibold text-gray-600">
-              Seleziona o crea un progetto per iniziare
-            </p>
-          </div>
         </div>
       )}
     </div>

@@ -31,6 +31,14 @@ function formatMateriali(materiali) {
     .join("; ");
 }
 
+/** Converte data ISO YYYY-MM-DD → DD/MM/YYYY */
+function fmtISO(str) {
+  if (!str) return "—";
+  const parts = str.split("-");
+  if (parts.length !== 3) return str;
+  return `${parts[2]}/${parts[1]}/${parts[0]}`;
+}
+
 /** Calcola il costo totale dei materiali di un nodo */
 function costoMateriali(nodo) {
   if (!nodo.materiali || nodo.materiali.length === 0) return 0;
@@ -52,8 +60,8 @@ function buildRows(progetto) {
       livello,
       responsabile: nodo.responsabile || "—",
       priorita: PRIORITA_LABEL[nodo.priorita] || "",
-      dataInizio: nodo.dataInizio || "—",
-      scadenza: nodo.dataScadenza || "—",
+      dataInizio: fmtISO(nodo.dataInizio),
+      scadenza: fmtISO(nodo.dataScadenza),
       stato: isLeaf ? STATI_LABEL[derivaStato(nodo.percentuale)] || "" : "",
       percentuale: `${nodo.percentuale}%`,
       costoTotale:

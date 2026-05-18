@@ -288,43 +288,61 @@ export default function GanttChart({ progetto, onAggiornaNodo }) {
     const pH = doc.internal.pageSize.getHeight();
     const margin = 8;
 
+    // Scale factor relative to A4 landscape (297mm) — fills A3/A2/A1 proportionally
+    const fmtScale = pW / 297;
+    const s = (v) => Math.round(v * fmtScale * 10) / 10;
+
+    // Scaled row/bar heights
+    const hdrH = s(7);   // table header row
+    const rH   = s(6);   // table data row
+    const gHdrH = s(7);  // gantt header row
+    const barH  = s(5);  // gantt bar row
+
+    // Column widths proportional to full available width
+    const availW = pW - margin * 2;
+    const colRatios = [0.07, 0.38, 0.14, 0.14, 0.09, 0.18];
+    const colWidths = colRatios.map((r) => Math.round(availW * r * 10) / 10);
+    const totalW = colWidths.reduce((a, b) => a + b, 0);
+
+    // Gantt label column scales with format
+    const barLabelW = s(70);
+    const barAreaW = pW - margin * 2 - barLabelW;
+
     // Header
     doc.setFillColor(249, 250, 251);
-    doc.rect(0, 0, pW, 22, "F");
+    doc.rect(0, 0, pW, s(22), "F");
     doc.setFont("helvetica", "bold");
-    doc.setFontSize(14);
+    doc.setFontSize(Math.round(14 * fmtScale));
     doc.setTextColor(30, 30, 30);
-    doc.text(`Cronoprogramma — ${progetto.titolo}`, margin, 14);
-    doc.setFontSize(8);
+    doc.text(`Cronoprogramma — ${progetto.titolo}`, margin, s(14));
+    doc.setFontSize(Math.round(8 * fmtScale));
     doc.setFont("helvetica", "normal");
     doc.setTextColor(120, 120, 120);
     doc.text(
       `Generato il ${new Date().toLocaleDateString("it-IT")}`,
       pW - margin,
-      14,
+      s(14),
       { align: "right" },
     );
 
-    const tableTop = 28;
-    const colWidths = [12, 55, 22, 22, 18, 18];
+    const tableTop = s(28);
     const headers = ["WBS", "Attività", "Inizio", "Fine", "%", "Stato"];
-    const totalW = colWidths.reduce((a, b) => a + b, 0);
 
     // Table header
     doc.setFillColor(243, 244, 246);
-    doc.rect(margin, tableTop, totalW, 7, "F");
-    doc.setFontSize(7);
+    doc.rect(margin, tableTop, totalW, hdrH, "F");
+    doc.setFontSize(Math.round(7 * fmtScale));
     doc.setFont("helvetica", "bold");
     doc.setTextColor(30, 30, 30);
     let xPos = margin;
     headers.forEach((h, i) => {
-      doc.text(h, xPos + 1, tableTop + 5);
+      doc.text(h, xPos + 1, tableTop + hdrH - 2);
       xPos += colWidths[i];
     });
 
     // Rows
     doc.setFont("helvetica", "normal");
-    let y = tableTop + 7;
+    let y = tableTop + hdrH;
     righe.forEach((r, idx) => {
       if (y > pH - 15) {
         doc.addPage();
@@ -332,9 +350,9 @@ export default function GanttChart({ progetto, onAggiornaNodo }) {
       }
       const fillColor = idx % 2 === 0 ? [255, 255, 255] : [249, 250, 251];
       doc.setFillColor(...fillColor);
-      doc.rect(margin, y, totalW, 6, "F");
+      doc.rect(margin, y, totalW, rH, "F");
 
-      doc.setFontSize(6);
+      doc.setFontSize(Math.round(6 * fmtScale));
       const indent = "  ".repeat(r.depth);
       const statoLabel = STATO_LABEL[r.stato] || "Da fare";
       const vals = [
@@ -361,46 +379,43 @@ export default function GanttChart({ progetto, onAggiornaNodo }) {
           doc.setTextColor(r.isLeaf ? 60 : 20, r.isLeaf ? 60 : 20, r.isLeaf ? 60 : 20);
         }
         const text = doc.splitTextToSize(v, colWidths[i] - 2);
-        doc.text(text[0] || "", xPos + 1, y + 4);
+        doc.text(text[0] || "", xPos + 1, y + rH - 2);
         xPos += colWidths[i];
       });
 
-      y += 6;
+      y += rH;
     });
 
-    // Gantt bar section on remaining space or new page
+    // Gantt bar section
     doc.addPage();
     doc.setFillColor(249, 250, 251);
-    doc.rect(0, 0, pW, 22, "F");
+    doc.rect(0, 0, pW, s(22), "F");
     doc.setFont("helvetica", "bold");
-    doc.setFontSize(14);
+    doc.setFontSize(Math.round(14 * fmtScale));
     doc.setTextColor(30, 30, 30);
-    doc.text("Diagramma di Gantt", margin, 14);
+    doc.text("Diagramma di Gantt", margin, s(14));
 
-    // Simple visual bars
-    const barTop = 28;
-    const barLabelW = 60;
-    const barAreaW = pW - margin * 2 - barLabelW;
+    const barTop = s(28);
     let by = barTop;
 
     // Header row
     doc.setFillColor(243, 244, 246);
-    doc.rect(margin, by, barLabelW + barAreaW, 6, "F");
-    doc.setFontSize(6);
+    doc.rect(margin, by, barLabelW + barAreaW, gHdrH, "F");
+    doc.setFontSize(Math.round(6 * fmtScale));
     doc.setTextColor(120, 120, 120);
-    doc.text("Attività", margin + 1, by + 4);
+    doc.text("Attività", margin + 1, by + gHdrH - 2);
 
     // Date labels above bar area
     if (totalDays > 0) {
-      const step = Math.max(1, Math.floor(totalDays / 10));
+      const step = Math.max(1, Math.floor(totalDays / 12));
       for (let i = 0; i < totalDays; i += step) {
         const d = addDays(globalStart, i);
         const xd = margin + barLabelW + (i / totalDays) * barAreaW;
         doc.setTextColor(100, 100, 100);
-        doc.text(formatDate(d), xd, by + 4);
+        doc.text(formatDate(d), xd, by + gHdrH - 2);
       }
     }
-    by += 7;
+    by += gHdrH;
 
     righeConDate.forEach((r, idx) => {
       if (by > pH - 10) {
@@ -409,23 +424,23 @@ export default function GanttChart({ progetto, onAggiornaNodo }) {
       }
       const fillColor = idx % 2 === 0 ? [255, 255, 255] : [249, 250, 251];
       doc.setFillColor(...fillColor);
-      doc.rect(margin, by, barLabelW + barAreaW, 5, "F");
+      doc.rect(margin, by, barLabelW + barAreaW, barH, "F");
 
       // Label
-      doc.setFontSize(5);
+      doc.setFontSize(Math.round(5 * fmtScale));
       doc.setTextColor(60, 60, 60);
       const label = doc.splitTextToSize(r.titolo, barLabelW - 2);
-      doc.text(label[0] || "", margin + 1, by + 3.5);
+      doc.text(label[0] || "", margin + 1, by + barH - 1.5);
 
       // Bar
       const startOff = diffDays(globalStart, r.inizio);
       const dur = Math.max(1, diffDays(r.inizio, r.fine));
       const barX = margin + barLabelW + (startOff / totalDays) * barAreaW;
-      const barW = Math.max(1, (dur / totalDays) * barAreaW);
+      const barW = Math.max(s(1), (dur / totalDays) * barAreaW);
 
       // Background bar
       doc.setFillColor(229, 231, 235);
-      doc.roundedRect(barX, by + 0.5, barW, 4, 1, 1, "F");
+      doc.roundedRect(barX, by + 0.5, barW, barH - 1, 0.8, 0.8, "F");
 
       // Progress fill
       const sc =
@@ -436,14 +451,14 @@ export default function GanttChart({ progetto, onAggiornaNodo }) {
             : [239, 68, 68];
       doc.setFillColor(...sc);
       const fillW = barW * (r.percentuale / 100);
-      if (fillW > 0) doc.roundedRect(barX, by + 0.5, fillW, 4, 1, 1, "F");
+      if (fillW > 0) doc.roundedRect(barX, by + 0.5, fillW, barH - 1, 0.8, 0.8, "F");
 
       // Percentage text
-      doc.setFontSize(4);
+      doc.setFontSize(Math.round(4 * fmtScale));
       doc.setTextColor(255, 255, 255);
-      if (barW > 10) doc.text(`${r.percentuale}%`, barX + 1, by + 3.5);
+      if (barW > s(10)) doc.text(`${r.percentuale}%`, barX + 1, by + barH - 1.5);
 
-      by += 5;
+      by += barH;
     });
 
     doc.save(

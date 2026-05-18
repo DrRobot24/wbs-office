@@ -8,21 +8,17 @@ export default function Sidebar({
   onAggiungiProgetto,
   onEliminaProgetto,
   onArchiviaProgetto,
-  onRipristinaProgetto,
-  onEsportaJSON,
-  onImportaJSON,
+  onEsportaProgettoJSON,
   isAdmin,
   vista,
   onOpenAdmin,
   onOpenProfile,
 }) {
   const { user, profile, cloud, signOut } = useAuth();
-  const [archivioAperto, setArchivioAperto] = useState(false);
   const [selezioneAttiva, setSelezioneAttiva] = useState(false);
   const [selezionati, setSelezionati] = useState(new Set());
 
   const progettiAttivi = projects.filter((p) => !p.archived);
-  const progettiArchiviati = projects.filter((p) => p.archived);
 
   const toggleSelezione = (id) => {
     setSelezionati((prev) => {
@@ -42,17 +38,6 @@ export default function Sidebar({
   const chiudiSelezione = () => {
     setSelezionati(new Set());
     setSelezioneAttiva(false);
-  };
-
-  const handleImport = () => {
-    const input = document.createElement("input");
-    input.type = "file";
-    input.accept = ".json";
-    input.onchange = (e) => {
-      const file = e.target.files?.[0];
-      if (file) onImportaJSON(file);
-    };
-    input.click();
   };
 
   return (
@@ -147,20 +132,15 @@ export default function Sidebar({
                 ☑
               </button>
             )}
-            <button
-              onClick={onEsportaJSON}
-              className="w-7 h-7 flex items-center justify-center rounded-lg bg-gray-800 border border-gray-700 hover:bg-gray-700 text-gray-400 hover:text-white text-[11px] cursor-pointer transition-all"
-              title="Esporta JSON"
-            >
-              💾
-            </button>
-            <button
-              onClick={handleImport}
-              className="w-7 h-7 flex items-center justify-center rounded-lg bg-gray-800 border border-gray-700 hover:bg-gray-700 text-gray-400 hover:text-white text-[11px] cursor-pointer transition-all"
-              title="Importa JSON"
-            >
-              📂
-            </button>
+            {activeProjectId && (
+              <button
+                onClick={() => onEsportaProgettoJSON(activeProjectId)}
+                className="w-7 h-7 flex items-center justify-center rounded-lg bg-gray-800 border border-gray-700 hover:bg-gray-700 text-gray-400 hover:text-white text-[11px] cursor-pointer transition-all"
+                title="Esporta progetto attivo come .json"
+              >
+                💾
+              </button>
+            )}
           </div>
         </div>
 
@@ -266,68 +246,6 @@ export default function Sidebar({
           <p className="px-5 text-xs text-gray-600 italic py-4 font-semibold">
             Nessun progetto
           </p>
-        )}
-
-        {/* ═══ Sezione Archivio ═══ */}
-        {progettiArchiviati.length > 0 && (
-          <div className="mt-4 border-t border-gray-700/50">
-            <button
-              onClick={() => setArchivioAperto((v) => !v)}
-              className="w-full px-5 py-3 flex items-center justify-between text-gray-500 hover:text-gray-300 transition-colors cursor-pointer"
-            >
-              <span className="text-[10px] uppercase tracking-widest font-bold">
-                📦 Archivio ({progettiArchiviati.length})
-              </span>
-              <span className="text-xs transition-transform" style={{ transform: archivioAperto ? "rotate(180deg)" : "rotate(0deg)" }}>
-                ▾
-              </span>
-            </button>
-
-            {archivioAperto && (
-              <div className="pb-2">
-                {progettiArchiviati.map((p) => (
-                  <div
-                    key={p.id}
-                    className={`flex items-center gap-2 px-5 py-2 cursor-pointer transition-all duration-200 group ${
-                      p.id === activeProjectId
-                        ? "bg-gray-700/30 border-l-4 border-gray-500 text-gray-300"
-                        : "text-gray-600 hover:bg-white/5 hover:text-gray-400 border-l-4 border-transparent"
-                    }`}
-                    onClick={() => onSelectProject(p.id)}
-                  >
-                    <span className="flex-1 text-sm truncate font-bold italic">
-                      {p.titolo}
-                    </span>
-                    <span className="text-xs font-bold text-gray-600">
-                      {p.percentuale}%
-                    </span>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onRipristinaProgetto(p.id);
-                      }}
-                      className="opacity-0 group-hover:opacity-100 text-emerald-400 hover:text-emerald-300 text-xs cursor-pointer transition-opacity font-bold"
-                      title="Ripristina progetto"
-                    >
-                      ↩
-                    </button>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        if (confirm(`Eliminare definitivamente "${p.titolo}"?`)) {
-                          onEliminaProgetto(p.id);
-                        }
-                      }}
-                      className="opacity-0 group-hover:opacity-100 text-rose-400 hover:text-rose-300 text-xs cursor-pointer transition-opacity font-bold"
-                      title="Elimina definitivamente"
-                    >
-                      ✕
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
         )}
       </div>
 

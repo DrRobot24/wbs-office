@@ -270,7 +270,9 @@ export function useProjects(userId) {
   const archiviaProgetto = useCallback(
     (id) => {
       setProjects((prev) =>
-        prev.map((p) => (p.id === id ? { ...p, archived: true } : p)),
+        prev.map((p) =>
+          p.id === id ? { ...p, archived: true, archivedAt: new Date().toISOString() } : p,
+        ),
       );
       setActiveProjectId((prev) => {
         if (prev === id) {
@@ -411,29 +413,43 @@ export function useProjects(userId) {
   }, []);
 
   // --- Export / Import ---
-  const esportaJSON = useCallback(() => {
-    const blob = new Blob([JSON.stringify(projects, null, 2)], {
-      type: "application/json",
-    });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "wbs-backup.json";
-    a.click();
-    URL.revokeObjectURL(url);
-  }, [projects]);
+  const esportaProgettoJSON = useCallback(
+    (id) => {
+      const progetto = projects.find((p) => p.id === id);
+      if (!progetto) return;
+      const blob = new Blob([JSON.stringify(progetto, null, 2)], {
+        type: "application/json",
+      });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${progetto.titolo.replace(/[^a-zA-Z0-9]/g, "_")}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+    },
+    [projects],
+  );
 
   const importaJSON = useCallback((file) => {
     const reader = new FileReader();
     reader.onload = (e) => {
       try {
         const data = JSON.parse(e.target.result);
-        if (Array.isArray(data)) {
-          const ricalcolati = data.map((p) =>
-            ricalcolaPercentuali(migraProgetto(p)),
+        const prepara = (raw) =>
+          ricalcolaPercentuali(
+            migraProgetto({ ...raw, id: uuidv4(), archived: false, archivedAt: undefined }),
           );
-          setProjects(ricalcolati);
-          setActiveProjectId(ricalcolati.length > 0 ? ricalcolati[0].id : null);
+        if (Array.isArray(data)) {
+          if (data.length === 0) { alert("File JSON vuoto."); return; }
+          const nuovi = data.map(prepara);
+          setProjects((prev) => [...prev, ...nuovi]);
+          setActiveProjectId(nuovi[0].id);
+        } else if (data && data.titolo) {
+          const imported = prepara(data);
+          setProjects((prev) => [...prev, imported]);
+          setActiveProjectId(imported.id);
+        } else {
+          alert("File JSON non riconosciuto.");
         }
       } catch {
         alert("File JSON non valido.");
@@ -461,7 +477,7 @@ export function useProjects(userId) {
     promuoviNodo,
     declassaNodo,
     replaceProgetto,
-    esportaJSON,
+    esportaProgettoJSON,
     importaJSON,
   };
 }

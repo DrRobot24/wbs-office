@@ -91,6 +91,13 @@ function fmt(n) {
   });
 }
 
+function fmtData(str) {
+  if (!str) return "—";
+  const parts = str.split("-");
+  if (parts.length !== 3) return str;
+  return `${parts[2]}/${parts[1]}/${parts[0]}`;
+}
+
 const inputCls =
   "w-full bg-white border-2 border-black rounded-xl px-2 py-1.5 text-xs text-black focus:outline-none focus:ring-2 focus:ring-amber-400";
 
@@ -442,7 +449,7 @@ function NodoRow({ nodo, costoMat, isEditing, onStartEdit, onStopEdit, onAggiorn
               {nodo.fatture.map((fat, i) => (
                 <tr key={i} className="text-black">
                   <td className="px-3 py-2 font-medium">{fat.numero || "—"}</td>
-                  <td className="px-3 py-2">{fat.data || "—"}</td>
+                  <td className="px-3 py-2">{fmtData(fat.data)}</td>
                   <td className="px-3 py-2">{fat.fornitore || "—"}</td>
                   <td className="px-3 py-2">{fat.descrizione || "—"}</td>
                   <td className="px-3 py-2 text-right font-bold text-black">
